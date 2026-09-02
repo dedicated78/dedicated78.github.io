@@ -1,0 +1,46 @@
+services:
+  open-seo:
+    # Built from this checkout, not the upstream GHCR image, because the
+    # GrowwithMH branding lives in this source tree. Set OPEN_SEO_IMAGE to pull
+    # a published upstream tag instead (you lose the branding if you do).
+    image: ${OPEN_SEO_IMAGE:-growwithmh-seo:local}
+    build:
+      context: .
+      dockerfile: Dockerfile.selfhost
+    restart: unless-stopped
+    # Forward EVERY .env value into the container. The explicit `environment:`
+    # list below still wins for the values it names — without this, any .env
+    # value not listed there (e.g. OPENROUTER_API_KEY) silently never reached
+    # the app. Compose errors if .env is missing; the quickstart's
+    # `cp .env.example .env` creates it.
+    env_file:
+      - .env
+    # Anonymous usage heartbeat controls: docs/SELF_HOSTING_DOCKER.md#telemetry
+    environment:
+      # Required for local Docker self-hosting: exposes Compose env vars to cloudflare:workers bindings.
+      - CLOUDFLARE_INCLUDE_PROCESS_ENV=true
+      - PORT=${PORT:-3001}
+      - ALLOWED_HOST=${ALLOWED_HOST:-}
+      - AUTH_MODE=local_noauth
+      # Defaults to opted out for this single-operator install. Set to empty in
+      # .env to send upstream the anonymous heartbeat.
+      - OPENSEO_TELEMETRY_DISABLED=${OPENSEO_TELEMETRY_DISABLED:-1}
+      - DO_NOT_TRACK=${DO_NOT_TRACK:-}
+      - DATAFORSEO_API_KEY=${DATAFORSEO_API_KEY}
+      # Optional: Google Search Console. See
+      # docs/SELF_HOSTING_GOOGLE_SEARCH_CONSOLE.md
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - BETTER_AUTH_SECRET=${BETTER_AUTH_SECRET:-}
+      # Optional: SAM, the in-app SEO agent (hidden when unset)
+      - OPENROUTER_API_KEY=${OPENROUTER_API_KEY:-}
+      - OPENROUTER_MODEL=${OPENROUTER_MODEL:-}
+      - VITE_SHOW_DEVTOOLS=false
+    # Loopback-only. AUTH_MODE=local_noauth means the app has no login of its
+    # own, so it must sit behind your reverse proxy's auth — never bind 0.0.0.0.
+    ports:
+      - "127.0.0.1:${PORT:-3001}:${PORT:-3001}"
+    volumes:
+      - open_seo_data:/app/.wrangler
+volumes:
+  open_seo_data:
