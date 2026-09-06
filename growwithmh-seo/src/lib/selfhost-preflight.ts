@@ -1,5 +1,10 @@
 import { AUTH_MODES } from "@/lib/auth-mode";
 import {
+  allowsNoAuthMode,
+  NO_AUTH_IN_PRODUCTION_MESSAGE,
+  parseDeploymentMode,
+} from "@/shared/deployment-mode";
+import {
   looksLikeDataForSeoKey,
   MIN_BETTER_AUTH_SECRET_LENGTH,
   validateTeamDomain,
@@ -48,12 +53,27 @@ function checkAuthMode(env: EnvRecord, items: PreflightItem[]): void {
   const mode = rawMode ?? "cloudflare_access";
 
   if (mode === "local_noauth") {
+    // Fail closed: local_noauth hands every caller full admin with no
+    // credential, so a deployment that has not declared itself a development
+    // machine must not boot into it.
+    if (
+      !allowsNoAuthMode(parseDeploymentMode(get(env, "DEPLOYMENT_MODE")), mode)
+    ) {
+      items.push({
+        key: "auth",
+        name: "AUTH_MODE",
+        level: "fail",
+        message: NO_AUTH_IN_PRODUCTION_MESSAGE,
+      });
+      return;
+    }
+
     items.push({
       key: "auth",
       name: "AUTH_MODE",
-      level: "ok",
+      level: "warn",
       message:
-        "local_noauth — no auth, single admin user. Do not expose publicly without your own auth in front.",
+        "local_noauth (DEPLOYMENT_MODE=development) — no auth, single admin user. Never expose this deployment publicly.",
     });
     return;
   }
@@ -145,11 +165,15 @@ function checkDataForSeo(env: EnvRecord, items: PreflightItem[]): void {
     return;
   }
 
+  // "Set" is all a preflight can honestly say: it reads the environment, it
+  // does not call DataForSEO. The app verifies the credential separately with
+  // the free user_data endpoint and reports VERIFIED only after that succeeds.
   items.push({
     key: "dataforseo",
     name: "DATAFORSEO_API_KEY",
     level: "ok",
-    message: "Set",
+    message:
+      "Configured (not yet verified) — the app checks it against DataForSEO on first use.",
   });
 }
 

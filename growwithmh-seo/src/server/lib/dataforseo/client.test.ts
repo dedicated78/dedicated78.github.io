@@ -24,6 +24,19 @@ const { checkMock, trackMock, getOrCreateMock, isHostedServerAuthModeMock } =
 
 vi.mock("cloudflare:workers", () => ({
   waitUntil: vi.fn(),
+  env: {},
+}));
+
+// Provider-cost accounting is exercised in spendGuard.test.ts; this suite is
+// about credit metering, so the platform services are stubbed out.
+vi.mock("@/server/features/platform/services/spendGuard", () => ({
+  assertSpendAllowed: vi.fn(async () => {}),
+  reserveSpend: vi.fn(
+    async (_ref: unknown, _usd: number, run: () => Promise<unknown>) => run(),
+  ),
+}));
+vi.mock("@/server/features/platform/repositories/ApiUsageRepository", () => ({
+  recordUsage: vi.fn(async () => {}),
 }));
 
 vi.mock("@/server/billing/autumn", () => ({

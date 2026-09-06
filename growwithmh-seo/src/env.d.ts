@@ -46,6 +46,14 @@ declare namespace Cloudflare {
     // DataForSEO API Basic auth value (base64 of login:password)
     DATAFORSEO_API_KEY: string;
 
+    // "development" | "production" (default). Declares whether this deployment
+    // may run with authentication disabled — see shared/deployment-mode.ts.
+    DEPLOYMENT_MODE?: string;
+
+    // Shared bearer token required by the self-hosted MCP endpoint outside
+    // Cloudflare Access. Without it, MCP is refused in production.
+    MCP_AUTH_TOKEN?: string;
+
     // OpenRouter API key for the in-app chat agents (onboarding + SAM).
     OPENROUTER_API_KEY?: string;
     // Optional OpenRouter model slug override (defaults in openrouter.ts).

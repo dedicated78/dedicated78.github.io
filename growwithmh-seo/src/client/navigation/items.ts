@@ -2,6 +2,7 @@ import {
   Bookmark,
   Bot,
   ClipboardCheck,
+  Gauge,
   Globe,
   LayoutDashboard,
   Link2,
@@ -75,10 +76,16 @@ const aiNavItem = linkOptions({
   icon: Bot,
 });
 
+const operationsNavItem = linkOptions({
+  to: "/operations" as const,
+  label: "Usage & Cost",
+  icon: Gauge,
+});
+
 // Always-visible sidebar group (not project-scoped, unlike the groups below).
 export const connectNavGroup = {
   label: "Connect",
-  items: [aiNavItem],
+  items: [aiNavItem, operationsNavItem],
 };
 
 function getProjectNavItems(projectId: string) {

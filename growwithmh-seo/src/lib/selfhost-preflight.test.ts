@@ -9,15 +9,31 @@ function itemFor(
 }
 
 describe("runSelfhostPreflight", () => {
-  it("passes the stock Docker setup (local_noauth + DataForSEO key)", () => {
+  it("passes a declared development Docker setup (local_noauth + DataForSEO key)", () => {
+    const result = runSelfhostPreflight({
+      AUTH_MODE: "local_noauth",
+      DEPLOYMENT_MODE: "development",
+      DATAFORSEO_API_KEY: btoa("user@example.com:secret"),
+    });
+
+    expect(result.failed).toBe(false);
+    // Warn, not ok: no-auth is never a clean state, only an acknowledged one.
+    expect(itemFor(result, "AUTH_MODE")?.level).toBe("warn");
+    expect(itemFor(result, "DATAFORSEO_API_KEY")?.level).toBe("ok");
+  });
+
+  it("fails local_noauth when the deployment has not declared itself development", () => {
+    // Phase 1 shipped this mode wide open. Booting into it by default gives
+    // every caller admin with no credential, so an undeclared deployment must
+    // refuse to start rather than start unprotected.
     const result = runSelfhostPreflight({
       AUTH_MODE: "local_noauth",
       DATAFORSEO_API_KEY: btoa("user@example.com:secret"),
     });
 
-    expect(result.failed).toBe(false);
-    expect(itemFor(result, "AUTH_MODE")?.level).toBe("ok");
-    expect(itemFor(result, "DATAFORSEO_API_KEY")?.level).toBe("ok");
+    expect(result.failed).toBe(true);
+    expect(itemFor(result, "AUTH_MODE")?.level).toBe("fail");
+    expect(itemFor(result, "AUTH_MODE")?.message).toContain("development-only");
   });
 
   it("fails an invalid AUTH_MODE with the valid list", () => {
@@ -52,6 +68,7 @@ describe("runSelfhostPreflight", () => {
   it("warns on a DataForSEO key that is not base64 login:password", () => {
     const result = runSelfhostPreflight({
       AUTH_MODE: "local_noauth",
+      DEPLOYMENT_MODE: "development",
       DATAFORSEO_API_KEY: "raw-dashboard-key",
     });
 
@@ -63,6 +80,7 @@ describe("runSelfhostPreflight", () => {
   it("warns that GSC stays disabled on a short BETTER_AUTH_SECRET", () => {
     const result = runSelfhostPreflight({
       AUTH_MODE: "local_noauth",
+      DEPLOYMENT_MODE: "development",
       GOOGLE_CLIENT_ID: "id",
       GOOGLE_CLIENT_SECRET: "secret",
       BETTER_AUTH_SECRET: "too-short",

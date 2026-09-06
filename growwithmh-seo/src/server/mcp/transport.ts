@@ -19,6 +19,15 @@ import {
   type McpProps,
 } from "@/server/mcp/context";
 import { getPublicOrigin } from "@/server/mcp/public-origin";
+import {
+  authorizeSelfHostedMcp,
+  mcpAuthErrorResponse,
+} from "@/server/mcp/self-hosted-auth";
+import {
+  consumeRateLimit,
+  rateLimitHeaders,
+} from "@/server/features/platform/services/rateLimit";
+import { withExecutionSource } from "@/server/features/platform/services/executionSource";
 import { createOpenSeoMcpServer } from "@/server/mcp/server";
 
 // Mirrors the agents SDK's DEFAULT_CORS_OPTIONS so legacy responses carry the
@@ -176,6 +185,17 @@ export async function handleAuthenticatedOpenSeoMcpRequest(
   ])(request, env, ctx);
 }
 
+/**
+ * `env` arrives here as `unknown` (the handler is shared across runtimes), so
+ * read the two settings we need by narrowing rather than asserting a shape.
+ */
+function readEnvString(source: unknown, name: string): string | undefined {
+  if (typeof source !== "object" || source === null) return undefined;
+  if (!(name in source)) return undefined;
+  const value: unknown = Object.getOwnPropertyDescriptor(source, name)?.value;
+  return typeof value === "string" ? value : undefined;
+}
+
 export async function handleSelfHostedOpenSeoMcpRequest(
   request: Request,
   authMode: "cloudflare_access" | "local_noauth",
@@ -187,10 +207,43 @@ export async function handleSelfHostedOpenSeoMcpRequest(
     return new Response(null, { headers: MCP_CORS_HEADERS });
   }
 
+  // Phase 2 release blocker: until this check existed, local_noauth served
+  // every MCP tool to anonymous callers as the admin user.
+  const decision = authorizeSelfHostedMcp({
+    request,
+    authMode,
+    mcpAuthToken: readEnvString(env, "MCP_AUTH_TOKEN"),
+    deploymentMode: readEnvString(env, "DEPLOYMENT_MODE"),
+  });
+  if (!decision.ok) {
+    return mcpAuthErrorResponse(decision, MCP_CORS_HEADERS);
+  }
+
   const identity =
     authMode === "local_noauth"
       ? await resolveLocalNoAuthContext()
       : await resolveCloudflareAccessContext(request.headers);
+
+  // Rate limit per organization, after identity is known. Agents loop far
+  // faster than people click, and every tool behind this can cost money.
+  const limit = await consumeRateLimit("mcp", identity.organizationId);
+  if (!limit.allowed) {
+    return new Response(
+      JSON.stringify({
+        error: "rate_limited",
+        error_description: `Too many MCP requests. Try again in ${limit.retryAfterSeconds}s.`,
+      }),
+      {
+        status: 429,
+        headers: {
+          ...MCP_CORS_HEADERS,
+          ...rateLimitHeaders(limit),
+          "Content-Type": "application/json",
+        },
+      },
+    );
+  }
+
   const props = createWorkersOAuthMcpProps({
     userId: identity.userId,
     userEmail: identity.userEmail,
@@ -198,5 +251,10 @@ export async function handleSelfHostedOpenSeoMcpRequest(
     baseUrl: getPublicOrigin(request),
   });
 
-  return createRequestHandler(props)(request, env, ctx);
+  // Attribute every provider call made by this request to MCP rather than the
+  // "app" default, so the cost dashboard can tell an agent loop apart from a
+  // person clicking around.
+  return withExecutionSource("mcp", () =>
+    createRequestHandler(props)(request, env, ctx),
+  );
 }

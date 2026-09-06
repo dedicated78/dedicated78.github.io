@@ -4,11 +4,13 @@ import { isErrorCode, type ErrorCode } from "@/shared/error-codes";
 const STANDARD_MESSAGES: Record<ErrorCode, string> = {
   UNAUTHENTICATED: "Please sign in and try again.",
   AUTH_CONFIG_MISSING:
-    "OpenSEO auth is not configured. Follow the README setup steps for Cloudflare Access.",
+    "GrowwithMH SEO auth is not configured. Follow the setup steps for Cloudflare Access.",
   PAYMENT_REQUIRED:
-    "An active hosted subscription is required before you can use OpenSEO.",
+    "An active subscription is required before you can use GrowwithMH SEO.",
   INSUFFICIENT_CREDITS:
     "You've run out of credits. Add more credits or upgrade your plan to continue.",
+  SPEND_LIMIT_REACHED:
+    "This request would exceed the daily data budget, or paid SEO data is switched off. An administrator can adjust this in Operations.",
   FORBIDDEN: "You do not have access to this resource.",
   NOT_FOUND: "The requested resource was not found.",
   AUDIT_CAPACITY_REACHED:
@@ -23,7 +25,7 @@ const STANDARD_MESSAGES: Record<ErrorCode, string> = {
   AI_SEARCH_BILLING_ISSUE:
     "The connected DataForSEO account has a billing or balance issue.",
   DATAFORSEO_AUTH_FAILED:
-    "DataForSEO rejected the API key. Check that DATAFORSEO_API_KEY is the base64 of your DataForSEO login:password.",
+    "DataForSEO rejected the API key (HTTP 401/403). Check that DATAFORSEO_API_KEY is the base64 of your DataForSEO login:password, and that the account is active and allows this server's IP.",
   RATE_LIMITED: "Too many requests. Please wait and try again.",
   UPSTREAM_UNAVAILABLE:
     "The data provider is temporarily unavailable. Please retry in a moment.",

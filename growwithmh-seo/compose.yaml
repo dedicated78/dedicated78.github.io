@@ -22,6 +22,12 @@ services:
       - PORT=${PORT:-3001}
       - ALLOWED_HOST=${ALLOWED_HOST:-}
       - AUTH_MODE=local_noauth
+      # local_noauth has no login of its own, so the app now requires the
+      # deployment to declare itself development before it will boot into it.
+      - DEPLOYMENT_MODE=${DEPLOYMENT_MODE:-development}
+      # Bearer token for /mcp. Unset on a private machine; required in
+      # production, where MCP is refused without it.
+      - MCP_AUTH_TOKEN=${MCP_AUTH_TOKEN:-}
       # Defaults to opted out for this single-operator install. Set to empty in
       # .env to send upstream the anonymous heartbeat.
       - OPENSEO_TELEMETRY_DISABLED=${OPENSEO_TELEMETRY_DISABLED:-1}

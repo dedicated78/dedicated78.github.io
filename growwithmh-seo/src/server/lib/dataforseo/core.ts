@@ -50,6 +50,21 @@ function formatDataforseoErrorPayload(value: unknown): string {
     : text;
 }
 
+/**
+ * DataForSEO answers a bad `Authorization` header with **403**, not 401 — 401
+ * only appears on a missing header. Treating 403 as a generic INTERNAL_ERROR
+ * (as this did until Phase 2) surfaced a mistyped key as an opaque
+ * "DataForSEO HTTP 403" instead of the actionable "your key is wrong" message,
+ * which is the first thing an operator hits after pasting credentials.
+ *
+ * 403 also covers a suspended account and an IP allowlist rejection. All three
+ * are "these credentials cannot be used", which is what the error code means
+ * to the operator, so they share it.
+ */
+export function isDataforseoAuthStatus(status: number | undefined): boolean {
+  return status === 401 || status === 403;
+}
+
 function formatDataforseoRequestPath(url: RequestInfo): string {
   const rawUrl = typeof url === "string" ? url : url.url;
   try {
@@ -100,7 +115,7 @@ function createAuthenticatedFetch(
           ? "UPSTREAM_UNAVAILABLE"
           : response.status === 429
             ? "RATE_LIMITED"
-            : response.status === 401
+            : isDataforseoAuthStatus(response.status)
               ? "DATAFORSEO_AUTH_FAILED"
               : "INTERNAL_ERROR";
       const error = new AppError(
