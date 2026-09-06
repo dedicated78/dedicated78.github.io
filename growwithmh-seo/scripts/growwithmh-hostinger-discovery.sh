@@ -109,7 +109,7 @@ bytes_to_mb() {
 
 echo "===== GROWWITHMH HOSTINGER DISCOVERY START ====="
 echo "generated_at (UTC): $(date -u '+%Y-%m-%d %H:%M:%S' 2>/dev/null)"
-echo "script_version:     1.1"
+echo "script_version:     1.2"
 echo "mode:               read-only"
 
 # ---------------------------------------------------------------------------
@@ -173,6 +173,7 @@ else
 fi
 
 # cgroup v2 then v1.
+CG_LIMIT_READABLE="yes"
 if [ -r /sys/fs/cgroup/memory.max ]; then
   cg_mem="$(cat /sys/fs/cgroup/memory.max 2>/dev/null)"
   if [ "$cg_mem" = "max" ]; then
@@ -193,6 +194,7 @@ elif [ -r /sys/fs/cgroup/memory/memory.limit_in_bytes ]; then
   kv "cgroup_cpu_period_us" "$(cat /sys/fs/cgroup/cpu/cpu.cfs_period_us 2>/dev/null)"
 else
   kv "cgroup_memory_limit" "not readable"
+  CG_LIMIT_READABLE="no"
 fi
 
 kv "ulimit_open_files" "$(ulimit -n 2>/dev/null)"
@@ -426,11 +428,14 @@ printf '    %-28s %s\n' "1.1.1.1:5432 (postgres)" "$(probe_tcp 1.1.1.1 5432)"
 printf '    %-28s %s\n' "1.1.1.1:6379 (redis)" "$(probe_tcp 1.1.1.1 6379)"
 printf '    %-28s %s\n' "8.8.8.8:5432 (postgres)" "$(probe_tcp 8.8.8.8 5432)"
 
+# bash's /dev/tcp cannot tell ECONNREFUSED from "the network dropped it", so a
+# non-timeout failure is NOT proof that egress on 5432 works. Only a completed
+# connection proves it; anything else needs a real database endpoint to confirm.
 pg_egress="$(probe_tcp 1.1.1.1 5432)"
 case "$pg_egress" in
-  open|refused*) CAP_PG_EXTERNAL="YES" ;;
-  blocked*) CAP_PG_EXTERNAL="NO" ;;
-  *) CAP_PG_EXTERNAL="UNKNOWN" ;;
+  open) CAP_PG_EXTERNAL="YES" ;;
+  blocked*) CAP_PG_EXTERNAL="NO (outbound 5432 appears filtered)" ;;
+  *) CAP_PG_EXTERNAL="UNVERIFIED (probe inconclusive - test against a real host)" ;;
 esac
 
 echo
@@ -557,13 +562,26 @@ section "CAPABILITY SUMMARY"
 # ceiling (.npmrc node-options). Build-time memory, not steady state, is what
 # decides suitability — this is where a 2 GB box fails.
 EFFECTIVE_MB=$(( RAM_TOTAL_MB + SWAP_TOTAL_MB ))
+
+# /proc/meminfo on shared hosting reports the WHOLE physical machine, not this
+# account's allowance. Reading 502 GB off a box shared by hundreds of tenants
+# and calling it "GOOD" is exactly the wrong answer, so when the account's real
+# cap cannot be read the verdict is UNKNOWN — never GOOD.
+SHARED_HOSTING="no"
+if [ "$(id -u 2>/dev/null)" != "0" ] && [ "$CG_LIMIT_READABLE" = "no" ]; then
+  SHARED_HOSTING="likely"
+fi
+case "$(hostname 2>/dev/null)" in
+  *main-hosting*|*hostinger*|*web[0-9]*) SHARED_HOSTING="likely" ;;
+esac
+
 if [ "$RAM_TOTAL_MB" -le 0 ]; then
   CAP_RAM="UNKNOWN"
+elif [ "$SHARED_HOSTING" = "likely" ]; then
+  CAP_RAM="UNKNOWN (host-wide RAM only; per-account limit not readable)"
 elif [ "$RAM_TOTAL_MB" -ge 4000 ]; then
   CAP_RAM="GOOD"
-elif [ "$EFFECTIVE_MB" -ge 4000 ]; then
-  CAP_RAM="MARGINAL"
-elif [ "$RAM_TOTAL_MB" -ge 2000 ]; then
+elif [ "$EFFECTIVE_MB" -ge 4000 ] || [ "$RAM_TOTAL_MB" -ge 2000 ]; then
   CAP_RAM="MARGINAL"
 else
   CAP_RAM="POOR"
@@ -580,11 +598,15 @@ echo
 printf '  %-46s %s\n' "(detected RAM / swap)" "${RAM_TOTAL_MB} MB / ${SWAP_TOTAL_MB} MB"
 echo
 echo "  Scoring notes:"
-echo "    RAM       GOOD >= 4000 MB physical; MARGINAL if RAM+swap >= 4000 MB"
-echo "              or RAM >= 2000 MB; POOR below that. The boot-time Vite SSR"
-echo "              build is the peak, not steady-state serving."
-echo "    ExternalPG derived from outbound TCP 5432 reachability; 'refused'"
-echo "              counts as viable because it proves the port is not filtered."
+echo "    RAM       On shared hosting /proc/meminfo shows the whole physical box,"
+echo "              so the verdict is UNKNOWN unless the per-account cgroup cap"
+echo "              is readable. Otherwise GOOD >= 4000 MB, MARGINAL >= 2000 MB"
+echo "              (or with swap), POOR below. The boot-time Vite SSR build is"
+echo "              the peak, not steady-state serving."
+echo "    ExternalPG only a COMPLETED connection counts as proof. A refused or"
+echo "              unreachable probe is inconclusive - bash cannot distinguish"
+echo "              'nothing listening' from 'filtered', so verify against a real"
+echo "              database host before relying on it."
 echo "    LocalPG   YES when a server is installed, listening, or Docker can run one."
 
 echo

@@ -109,3 +109,24 @@ export const auditLog = pgTable(
     index("audit_log_action_idx").on(table.action),
   ],
 );
+
+/** See ../platform.schema.ts for why platform standing is not membership. */
+export const platformRoles = pgTable("platform_roles", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  role: text("role").notNull(),
+  grantedBy: text("granted_by").references(() => user.id, {
+    onDelete: "set null",
+  }),
+  grantedAt: timestampColumn("granted_at").notNull().default(isoNow),
+  note: text("note"),
+});
+
+export const organizationProfiles = pgTable("organization_profiles", {
+  organizationId: text("organization_id")
+    .primaryKey()
+    .references(() => organization.id, { onDelete: "cascade" }),
+  kind: text("kind").notNull().default("customer"),
+  createdAt: timestampColumn("created_at").notNull().default(isoNow),
+});

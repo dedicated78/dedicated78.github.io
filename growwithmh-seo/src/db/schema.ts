@@ -109,4 +109,6 @@ export const {
   apiUsage,
   spendControls,
   auditLog,
+  platformRoles,
+  organizationProfiles,
 } = schema;
