@@ -273,7 +273,9 @@ export function runSelfhostPreflight(env: EnvRecord): PreflightResult {
     name: "Scheduled checks",
     level: "info",
     message:
-      "Rank-tracking schedules do not run in Docker mode — trigger checks from the Rank Tracking page.",
+      "Scheduled execution unavailable in this deployment. Cloudflare cron triggers " +
+      "only fire on Cloudflare, so scheduled rank checks and the stale-audit watchdog " +
+      "do not run here — trigger rank checks manually from the Rank Tracking page.",
   });
 
   return { items, failed: items.some((item) => item.level === "fail") };

@@ -1,5 +1,13 @@
 # Phase 2 — Hostinger verification and production architecture
 
+> **Phase status.** Three separate things, deliberately not conflated:
+>
+> | Track                                           | Status                                                                                                                                                                                                |
+> | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+> | **Completed platform foundation**               | MCP authentication, fail-closed auth mode, provider cost ledger, spend guard, audit log, rate limiting, tenant isolation, role model, rebrand. Runtime-independent — carries into any hosting choice. |
+> | **Temporary Hostinger Web App test deployment** | Prepared, not yet deployed. See `HOSTINGER_WEBAPP_TEST.md`. Throwaway infrastructure for a compatibility and product smoke test. **A successful deployment does not complete Phase 2.**               |
+> | **Deferred commercial-scale infrastructure**    | VPS, durable background execution, Postgres adapter, scheduler, deployment pipeline. Still deferred. The Architecture B rewrite has **not** been started and awaits approval.                         |
+
 Decisions for Phase 2.1–2.7 and 2.13, from the v1.1 discovery report run on
 2026-09-06.
 

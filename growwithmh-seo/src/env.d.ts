@@ -50,6 +50,10 @@ declare namespace Cloudflare {
     // may run with authentication disabled — see shared/deployment-mode.ts.
     DEPLOYMENT_MODE?: string;
 
+    // Temporary test deployments only: shared HTTP Basic password in front of
+    // the whole app. Unset in normal deployments. See lib/test-access-gate.ts.
+    TEST_ACCESS_PASSWORD?: string;
+
     // Shared bearer token required by the self-hosted MCP endpoint outside
     // Cloudflare Access. Without it, MCP is refused in production.
     MCP_AUTH_TOKEN?: string;

@@ -26,6 +26,7 @@ import {
 import { maybeSendSelfHostHeartbeat } from "@/server/lib/self-host-telemetry";
 import { handleGdprStorageErasure } from "@/server/gdpr/storage-erasure";
 import { GDPR_STORAGE_ERASURE_PATH } from "@/shared/gdpr-erasure";
+import { testAccessGateResponse } from "@/server/lib/test-access-gate";
 
 const appFetch = createStartHandler(defaultStreamHandler);
 const openSeoOAuthProvider = createOpenSeoOAuthProvider(appFetch);
@@ -142,6 +143,13 @@ function handleFetch(
   ctx: ExecutionContext,
 ): Response | Promise<Response> {
   ctx.waitUntil(maybeSendSelfHostHeartbeat());
+
+  // Temporary test deployments only: one shared password in front of
+  // everything, so local_noauth is never anonymously reachable on a public
+  // URL. Disabled (and entirely absent from the request path) when
+  // TEST_ACCESS_PASSWORD is unset. See lib/test-access-gate.ts.
+  const gated = testAccessGateResponse(request, env.TEST_ACCESS_PASSWORD);
+  if (gated) return gated;
 
   const authMode = getAuthMode(env.AUTH_MODE);
   const publicRequest = requestWithPublicOrigin(request);
