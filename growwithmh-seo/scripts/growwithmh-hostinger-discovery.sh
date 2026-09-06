@@ -109,7 +109,7 @@ bytes_to_mb() {
 
 echo "===== GROWWITHMH HOSTINGER DISCOVERY START ====="
 echo "generated_at (UTC): $(date -u '+%Y-%m-%d %H:%M:%S' 2>/dev/null)"
-echo "script_version:     1.0"
+echo "script_version:     1.1"
 echo "mode:               read-only"
 
 # ---------------------------------------------------------------------------
@@ -471,10 +471,14 @@ PYEOF
   fi
 }
 
+# High unprivileged ports only. Standard production service ports (80, 443,
+# 3306, 5432, ...) are deliberately NOT probed: this script runs on a live host
+# that may be serving real sites, and even a momentary bind there is a risk
+# discovery has no need to take. Whether the app user can bind a listener is
+# fully answered by the ports below.
 kv "bind 127.0.0.1:39217" "$(bind_test 127.0.0.1 39217)"
 kv "bind 0.0.0.0:39218 (public)" "$(bind_test 0.0.0.0 39218)"
 kv "bind 0.0.0.0:3001 (app port)" "$(bind_test 0.0.0.0 3001)"
-kv "bind 0.0.0.0:80 (privileged)" "$(bind_test 0.0.0.0 80)"
 
 # ---------------------------------------------------------------------------
 section "EXISTING GROWWITHMH / APPLICATION ENVIRONMENT"
