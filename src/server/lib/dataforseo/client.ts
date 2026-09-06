@@ -17,7 +17,16 @@ import {
   type DataforseoApiResponse,
 } from "@/server/lib/dataforseo/envelope";
 import { isHostedServerAuthMode } from "@/server/lib/runtime-env";
-import { AppError } from "@/server/lib/errors";
+import { AppError, asAppError } from "@/server/lib/errors";
+import {
+  recordUsage,
+  type ApiUsageOutcome,
+} from "@/server/features/platform/repositories/ApiUsageRepository";
+import {
+  assertSpendAllowed,
+  reserveSpend,
+} from "@/server/features/platform/services/spendGuard";
+import { currentExecutionSource } from "@/server/features/platform/services/executionSource";
 
 export { mapDataforseoPathToCreditFeature };
 
@@ -158,9 +167,19 @@ async function meterDataforseoCall<T>(
 ): Promise<T> {
   const isHostedMode = await isHostedServerAuthMode();
 
+  // Spend controls and the usage ledger apply in EVERY mode. Phase 1 found the
+  // non-hosted path returning here with no ceiling checked and no cost written,
+  // so a self-hosted install could bill DataForSEO without limit or record.
+  // Autumn credits below remain hosted-only — provider cost and customer
+  // credits are different things and are accounted separately.
+  const spendRef = {
+    organizationId: customer.organizationId,
+    projectId: customer.projectId ?? null,
+  };
+  await assertSpendAllowed(spendRef);
+
   if (!isHostedMode) {
-    const result = await execute();
-    return result.data;
+    return runLedgered(spendRef, customer, execute, creditFeature);
   }
 
   const billingCustomer = await getOrCreateOrganizationCustomer(customer);
@@ -189,6 +208,11 @@ async function meterDataforseoCall<T>(
         monthlyRemaining,
         creditFeature,
       });
+      await writeUsageRow(spendRef, customer, error.billing, {
+        outcome: "charged_failed",
+        creditFeature,
+        errorCode: "INTERNAL_ERROR",
+      });
     }
     throw error;
   }
@@ -200,8 +224,107 @@ async function meterDataforseoCall<T>(
     monthlyRemaining,
     creditFeature,
   });
+  await writeUsageRow(spendRef, customer, result.billing, {
+    outcome: "success",
+    creditFeature,
+  });
 
   return result.data;
+}
+
+/**
+ * The non-hosted path: no Autumn customer, no credits — just the provider-cost
+ * ledger and the spend reservation that keeps concurrent calls honest.
+ *
+ * DataForSEO reports a call's real cost only in its response, so the amount
+ * reserved up front is an estimate. It is released the moment the true cost is
+ * booked, so the reservation only has to bound a burst, not be exact.
+ */
+async function runLedgered<T>(
+  spendRef: { organizationId: string; projectId: string | null },
+  customer: BillingCustomerContext,
+  execute: () => Promise<DataforseoApiResponse<T>>,
+  creditFeature?: CreditFeature,
+): Promise<T> {
+  return reserveSpend(spendRef, ESTIMATED_CALL_USD, async () => {
+    let result: DataforseoApiResponse<T>;
+    try {
+      result = await execute();
+    } catch (error) {
+      if (error instanceof DataforseoChargedTaskError) {
+        if (error.isInvalidField && error.billing.costUsd <= 0) {
+          await writeUsageRow(spendRef, customer, error.billing, {
+            outcome: "failed",
+            creditFeature,
+            errorCode: "VALIDATION_ERROR",
+          });
+          throw new AppError("VALIDATION_ERROR", error.message);
+        }
+        await writeUsageRow(spendRef, customer, error.billing, {
+          outcome: "charged_failed",
+          creditFeature,
+          errorCode: "INTERNAL_ERROR",
+        });
+      } else {
+        // No billing envelope means DataForSEO never charged; the row still
+        // matters so failures show up in the cost history.
+        await writeUsageRow(spendRef, customer, null, {
+          outcome: "failed",
+          creditFeature,
+          errorCode: asAppError(error)?.code ?? "INTERNAL_ERROR",
+        });
+      }
+      throw error;
+    }
+
+    await writeUsageRow(spendRef, customer, result.billing, {
+      outcome: "success",
+      creditFeature,
+    });
+    return result.data;
+  });
+}
+
+/**
+ * Reservation size for a call whose cost is not yet known. DataForSEO's live
+ * endpoints sit well under this, so it over-reserves slightly — the safe
+ * direction for a ceiling.
+ */
+const ESTIMATED_CALL_USD = 0.02;
+
+async function writeUsageRow(
+  spendRef: { organizationId: string; projectId: string | null },
+  customer: BillingCustomerContext,
+  billing: DataforseoApiCallCost | null,
+  options: {
+    outcome: ApiUsageOutcome;
+    creditFeature?: CreditFeature;
+    errorCode?: string;
+  },
+): Promise<void> {
+  try {
+    await recordUsage({
+      organizationId: spendRef.organizationId,
+      projectId: spendRef.projectId,
+      userId: customer.userId ?? null,
+      provider: "dataforseo",
+      apiFamily: billing?.path?.[1] ?? null,
+      endpoint: billing ? `/${billing.path.join("/")}` : null,
+      operation:
+        options.creditFeature ??
+        (billing ? mapDataforseoPathToCreditFeature(billing.path) : null),
+      executionSource: currentExecutionSource(),
+      correlationId: null,
+      outcome: options.outcome,
+      errorCode: options.errorCode ?? null,
+      costUsd: billing?.costUsd ?? 0,
+      fromCache: false,
+    });
+  } catch (error) {
+    // A ledger write must never break the call it describes; the spend guard
+    // degrades to the ceiling it can still read.
+    console.error("[api-usage] failed to record dataforseo call", error);
+  }
 }
 
 async function trackDataforseoCost(args: {

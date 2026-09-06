@@ -69,6 +69,7 @@ import {
   runSiteAuditTool,
 } from "@/server/mcp/tools/site-audit-tools";
 import { whoamiTool } from "@/server/mcp/tools/whoami";
+import { BRAND } from "@/shared/brand";
 
 type ToolSchema = z.ZodType | z.ZodRawShape;
 
@@ -128,15 +129,19 @@ function registerOpenSeoTool<Input extends ToolSchema>(
 export function createOpenSeoMcpServer(authProps: McpProps) {
   const server = new McpServer(
     {
-      name: "OpenSEO MCP",
-      title: "OpenSEO",
+      // Shown in every connected AI client, so this is product branding.
+      // The TOOL names are deliberately not renamed — agents, saved prompts
+      // and skills reference them by name and would break.
+      name: `${BRAND.name} MCP`,
+      title: BRAND.name,
       version: "0.0.12",
       description:
         "SEO research tools for AI agents: keyword research and metrics, SERP and local SERP results, domain and backlink analysis, rank tracking, and Google Search Console performance.",
-      websiteUrl: "https://openseo.so",
+      // Icon is served by this deployment rather than a third-party origin, so
+      // a self-host shows its own mark and makes no outbound request for it.
       icons: [
         {
-          src: "https://openseo.so/android-chrome-512x512.png",
+          src: "/android-chrome-512x512.png",
           mimeType: "image/png",
           sizes: ["512x512"],
         },
@@ -144,7 +149,7 @@ export function createOpenSeoMcpServer(authProps: McpProps) {
     },
     {
       instructions:
-        "OpenSEO research tools use credits. Proceed with normal focused research, but ask the user for confirmation before planned batches over 2,000 credits.",
+        "These research tools call paid data providers. Proceed with normal focused research, but ask the user for confirmation before large planned batches.",
     },
   );
 

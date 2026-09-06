@@ -17,6 +17,7 @@ const selfHostedAuthMocks = vi.hoisted(() => ({
   createMcpHandler: vi.fn(),
 }));
 
+vi.mock("cloudflare:workers", () => ({ env: {} }));
 vi.mock("@/middleware/ensure-user/cloudflareAccess", () => ({
   resolveCloudflareAccessContext:
     selfHostedAuthMocks.resolveCloudflareAccessContext,
@@ -131,11 +132,26 @@ describe("handleSelfHostedOpenSeoMcpRequest", () => {
     });
   });
 
-  it("accepts local no-auth MCP requests with the local admin context", async () => {
+  // Phase 1 verified this endpoint executing tools for anonymous callers as
+  // admin@localhost. A deployment that has not declared itself development,
+  // and has no MCP token, must now refuse rather than serve.
+  it("refuses anonymous local no-auth MCP requests by default", async () => {
     const response = await handleSelfHostedOpenSeoMcpRequest(
       createMcpRequest(),
       "local_noauth",
       {},
+      ctx,
+    );
+
+    expect(response.status).toBe(503);
+    expect(selfHostedAuthMocks.createOpenSeoMcpServer).not.toHaveBeenCalled();
+  });
+
+  it("accepts local no-auth MCP requests on a declared development machine", async () => {
+    const response = await handleSelfHostedOpenSeoMcpRequest(
+      createMcpRequest(),
+      "local_noauth",
+      { DEPLOYMENT_MODE: "development" },
       ctx,
     );
 

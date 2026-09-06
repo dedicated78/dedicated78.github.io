@@ -11,7 +11,7 @@ import {
 } from "@/client/features/ai-mcp/SetupControls";
 
 const DISCORD_URL = "https://discord.gg/c9uGs3cFXr";
-const SUPPORT_EMAIL = "ben@openseo.so";
+const SUPPORT_EMAIL = "growwithmh@gmail.com";
 const SAM_GITHUB_URL = "https://github.com/every-app/sam";
 const SKILL_NAMES = [
   "seo-project-setup",
@@ -43,18 +43,20 @@ export const Route = createFileRoute("/_app/ai")({
 });
 
 function AiPage() {
+  // Relative during SSR, absolute once hydrated. The previous fallback
+  // hardcoded the upstream hosted origin, which rendered a foreign URL on a
+  // self-hosted deployment for the first paint.
   const mcpUrl =
-    typeof window === "undefined"
-      ? "https://app.openseo.so/mcp"
-      : `${window.location.origin}/mcp`;
+    typeof window === "undefined" ? "/mcp" : `${window.location.origin}/mcp`;
 
   return (
     <div className="h-full overflow-auto bg-base-100 px-4 py-12 md:px-6 md:py-16 pb-24 md:pb-12">
       <div className="mx-auto max-w-3xl">
         <h1 className="text-2xl font-semibold">AI & MCP</h1>
         <p className="mt-2 text-sm text-base-content/70 leading-relaxed">
-          Connect your AI agent to OpenSEO. Run keyword research, SERP analysis,
-          domain lookups, and backlink reviews from your editor or chat.
+          Connect your AI agent to GrowwithMH SEO. Run keyword research, SERP
+          analysis, domain lookups, and backlink reviews from your editor or
+          chat.
         </p>
 
         {getAuthMode(import.meta.env.AUTH_MODE) === "cloudflare_access" ? (
@@ -92,9 +94,9 @@ function AiPage() {
             </code>
           </div>
           <p className="mt-2.5 text-xs text-base-content/55 leading-relaxed">
-            Paste this into any MCP client. This URL points at the OpenSEO
-            instance you are using now, whether hosted, self-hosted, or local.
-            Sign in with OpenSEO when prompted.
+            Paste this into any MCP client. This URL points at the GrowwithMH
+            SEO instance you are using now, whether hosted, self-hosted, or
+            local. Sign in with GrowwithMH SEO when prompted.
           </p>
           {isHostedClientAuthMode() ? (
             <p className="mt-2 text-xs text-base-content/55">
@@ -123,7 +125,7 @@ function AiPage() {
                 Run this in your terminal:
               </p>
               <CodeBlock
-                code={`claude mcp add --transport http --scope user openseo ${mcpUrl}`}
+                code={`claude mcp add --transport http --scope user growwithmh ${mcpUrl}`}
                 onCopy={() =>
                   captureClientEvent("mcp:setup_command_copy", {
                     agent: "claude-code",
@@ -154,9 +156,9 @@ function AiPage() {
                   .
                 </li>
                 <li>Paste the MCP URL above and click Add.</li>
-                <li>Approve the OpenSEO login when prompted.</li>
+                <li>Approve the GrowwithMH SEO login when prompted.</li>
                 <li>
-                  Optional: after OpenSEO connects, click{" "}
+                  Optional: after GrowwithMH SEO connects, click{" "}
                   <span className="font-medium text-base-content">
                     Configure
                   </span>
@@ -182,7 +184,7 @@ function AiPage() {
                 Run this in your terminal:
               </p>
               <CodeBlock
-                code={`codex mcp add openseo --url ${mcpUrl}`}
+                code={`codex mcp add growwithmh --url ${mcpUrl}`}
                 onCopy={() =>
                   captureClientEvent("mcp:setup_command_copy", {
                     agent: "codex",
@@ -216,18 +218,18 @@ function AiPage() {
                   .
                 </li>
                 <li>Paste the MCP URL above.</li>
-                <li>Approve the OpenSEO login when prompted.</li>
+                <li>Approve the GrowwithMH SEO login when prompted.</li>
               </ol>
             </Collapsible>
           </div>
         </section>
 
         <section className="mt-12">
-          <h2 className="text-base font-semibold">OpenSEO Skills</h2>
+          <h2 className="text-base font-semibold">GrowwithMH SEO Skills</h2>
           <p className="mt-1.5 text-sm text-base-content/70 leading-relaxed">
             Skills give Codex and Claude Code reusable SEO workflows that can
-            call your OpenSEO MCP tools when live SERP, keyword, backlink, or
-            domain data is needed.
+            call your GrowwithMH SEO MCP tools when live SERP, keyword,
+            backlink, or domain data is needed.
           </p>
           <div className="mt-4 divide-y divide-base-300 overflow-hidden rounded-lg border border-base-300 bg-base-200">
             <Collapsible
@@ -237,7 +239,7 @@ function AiPage() {
             >
               <CodeBlock code={SKILLS_INSTALL} />
               <p className="text-sm text-base-content/70">
-                You can also auto-accept each OpenSEO skill:
+                You can also auto-accept each GrowwithMH SEO skill:
               </p>
               <CodeBlock code={ALL_SKILLS_INSTALL} />
             </Collapsible>
@@ -320,7 +322,7 @@ function AiPage() {
               {
                 title: "In-app SEO Research Agent",
                 description:
-                  "Ask questions and run research without leaving OpenSEO",
+                  "Ask questions and run research without leaving GrowwithMH SEO",
               },
               {
                 title: "Content Assistant",

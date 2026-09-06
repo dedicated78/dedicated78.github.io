@@ -51,6 +51,53 @@ client, not per month — every call is metered.
 
 ---
 
+## Phase 2 — security settings you must set
+
+Two settings changed in Phase 2 and a production deployment will not work
+without them.
+
+**`DEPLOYMENT_MODE`** — `production` (default) or `development`.
+`AUTH_MODE=local_noauth` gives every caller full admin access with no
+credential. The app now refuses to start in that mode unless the deployment
+declares itself `development`, so a forgotten setting fails closed instead of
+booting wide open. `compose.yaml` sets `development` by default because Docker
+self-hosting _is_ the no-auth mode; change it only alongside real auth.
+
+**`MCP_AUTH_TOKEN`** — bearer token for `/mcp`.
+Until Phase 2 that endpoint was completely unauthenticated while serving 46
+tools that spend your DataForSEO balance. Now:
+
+| Deployment  | Token set | `/mcp`                                   |
+| ----------- | --------- | ---------------------------------------- |
+| any         | yes       | requires `Authorization: Bearer <token>` |
+| development | no        | open (private machine only)              |
+| production  | no        | refused with 503                         |
+
+```sh
+openssl rand -hex 32   # put the result in MCP_AUTH_TOKEN
+```
+
+Then point your agent at it:
+
+```sh
+claude mcp add --transport http --scope user growwithmh https://your-host/mcp \
+  --header "Authorization: Bearer $MCP_AUTH_TOKEN"
+```
+
+## Spend controls
+
+Provider cost is now recorded for every call in the `api_usage` ledger and
+visible at **Usage & Cost** in the sidebar. Daily ceilings and a kill switch
+live in `spend_controls`, enforced centrally before any paid call:
+
+- no row for a scope means no limit (a fresh install never refuses work);
+- `enabled = 0` is the kill switch for that scope;
+- cached results never consume budget;
+- if the limit cannot be read, the call is refused — a cost control fails
+  closed.
+
+Scopes stack: global, then workspace, then project. The tightest one wins.
+
 ## Step 2 — Run it
 
 ```sh

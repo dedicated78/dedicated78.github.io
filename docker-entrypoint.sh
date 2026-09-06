@@ -7,7 +7,7 @@
 # rebuilds.
 set -e
 
-echo 'OpenSEO sends an anonymous usage heartbeat (counts only). Disable: OPENSEO_TELEMETRY_DISABLED=1. Details: docs/SELF_HOSTING_DOCKER.md#telemetry'
+echo 'Upstream OpenSEO telemetry is disabled by default in this deployment (OPENSEO_TELEMETRY_DISABLED=1 in compose.yaml).'
 
 # The preflight validates env BEFORE the slow steps, so misconfiguration fails
 # in seconds with the exact fix instead of after a multi-minute build.
