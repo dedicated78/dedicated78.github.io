@@ -168,3 +168,43 @@ export const auditLog = sqliteTable(
     index("audit_log_action_idx").on(table.action),
   ],
 );
+
+/**
+ * GrowwithMH staff standing, held per user and independent of any workspace.
+ *
+ * Separate from `member.role` on purpose: platform standing must not be
+ * expressible as membership of some special organization, or "add them to the
+ * GrowwithMH workspace" would silently become "make them staff". One row per
+ * user; revoking is deleting the row.
+ */
+export const platformRoles = sqliteTable("platform_roles", {
+  userId: text("user_id")
+    .primaryKey()
+    .references(() => user.id, { onDelete: "cascade" }),
+  /** "platform_admin" | "platform_owner" — see shared/roles.ts. */
+  role: text("role").notNull(),
+  grantedBy: text("granted_by").references(() => user.id, {
+    onDelete: "set null",
+  }),
+  grantedAt: text("granted_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+  note: text("note"),
+});
+
+/**
+ * Classifies an organization as GrowwithMH's own or a customer's.
+ *
+ * A classification, never a permission. It keeps internal usage out of customer
+ * revenue and cost reporting; it grants nothing on its own.
+ */
+export const organizationProfiles = sqliteTable("organization_profiles", {
+  organizationId: text("organization_id")
+    .primaryKey()
+    .references(() => organization.id, { onDelete: "cascade" }),
+  /** "platform" | "customer" — defaults to customer. */
+  kind: text("kind").notNull().default("customer"),
+  createdAt: text("created_at")
+    .notNull()
+    .default(sql`(current_timestamp)`),
+});

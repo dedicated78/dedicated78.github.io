@@ -309,6 +309,13 @@
       "when": 1788712278977,
       "tag": "0043_volatile_nova",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "6",
+      "when": 1788716813682,
+      "tag": "0044_shocking_silver_centurion",
+      "breakpoints": true
     }
   ]
 }
