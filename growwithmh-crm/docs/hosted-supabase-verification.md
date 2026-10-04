@@ -149,7 +149,7 @@ npm run typecheck && npm test && npm run build
 npm run preview             # serves dist/ at http://localhost:4173  (or: npm run dev → :5173)
 ```
 
-**Expected:** typecheck clean; 19 parser tests pass; build writes `dist/`. Opening the served URL shows the **Sign in** form (not the "Supabase isn't configured" card). `grep -r "service_role" dist/` finds nothing. In the browser Network tab, sign-in calls go to your `*.supabase.co` project and send only the anon key as `apikey`. Signing in as Mehedi lands on the admin dashboard. (To deploy later: upload the *contents* of `dist/` to hosting. Not part of this checklist.)
+**Expected:** typecheck clean; all 35 unit tests pass (19 Markdown-parser + 16 mutation-safety audit); build writes `dist/`. Opening the served URL shows the **Sign in** form (not the "Supabase isn't configured" card). `grep -r "service_role" dist/` finds nothing. In the browser Network tab, sign-in calls go to your `*.supabase.co` project and send only the anon key as `apikey`. Signing in as Mehedi lands on the admin dashboard. (To deploy later: upload the *contents* of `dist/` to hosting. Not part of this checklist.)
 
 ## 12. Upload a real-format Markdown prospect report
 

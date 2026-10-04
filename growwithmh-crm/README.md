@@ -73,7 +73,7 @@ cp .env.example .env
 npm install
 npm run dev          # http://localhost:5173
 npm run typecheck
-npm test             # Markdown parser tests
+npm test             # Markdown parser tests + mutation-safety audit (35 tests)
 ```
 
 ## 7. Creating users and the first admin
@@ -167,7 +167,7 @@ Missing optional fields never block an upload; only the business name is require
 | Clients & onboarding | all (edit, delete) | ❌ | read-only for clients from their deals |
 | Settings, users | ✅ | ❌ | ❌ |
 
-Column-level rules are enforced by triggers (e.g. outreach cannot rename a lead or reassign it, BD cannot reassign a deal). Leads, reports, activities have no delete policy at all: archive instead. `supabase/tests/rls_test.sql` asserts all of this (141 checks, see §13) — run it against a scratch database after changing policies.
+Every browser UPDATE/DELETE is scoped to one record by primary key and a test fails if that ever changes (`docs/mutation-safety-review.md`). Column-level rules are enforced by triggers (e.g. outreach cannot rename a lead or reassign it, BD cannot reassign a deal). Leads, reports, activities have no delete policy at all: archive instead. `supabase/tests/rls_test.sql` asserts all of this (141 checks, see §13) — run it against a scratch database after changing policies.
 
 ## 11. Security notes
 
