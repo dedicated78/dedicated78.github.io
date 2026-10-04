@@ -34,6 +34,7 @@ src/
 supabase/
   migrations/    1 schema · 2 RLS · 3 storage · 4 RPC functions
   tests/         rls_test.sql  (policy/RPC regression test)
+  e2e/           local browser E2E harness (isolated, DB rebuilt per scenario)
   seed.sql       optional fictional demo data  (+ seed_cleanup.sql)
 docs/            prospect-report-template.md · sample-prospect-report.md · research-prompt.md
 ```
@@ -74,6 +75,8 @@ npm install
 npm run dev          # http://localhost:5173
 npm run typecheck
 npm test             # Markdown parser tests + mutation-safety audit (35 tests)
+npm run test:sql     # authorization regression test on a scratch local Postgres (needs a PostgreSQL install)
+npm run e2e          # full browser E2E suite against the real migrations (see e2e/README.md)
 ```
 
 ## 7. Creating users and the first admin

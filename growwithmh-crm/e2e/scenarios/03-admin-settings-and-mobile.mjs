@@ -1,0 +1,155 @@
+import { launch, newPage, login, shot, check, summary, BASE, sql } from '../lib.mjs';
+const b = await launch();
+const noOverflow = (p) => p.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1);
+
+console.log('\nADMIN: settings, manual lead, sparse markdown');
+const a = await newPage(b);
+await login(a, 'mehedi@demo.test');
+sql(`insert into auth.users (id,email,raw_user_meta_data) values ('00000000-0000-0000-0000-0000000000e1','rana@demo.test','{"full_name":"Rana","role":"admin"}')`);
+await a.goto(`${BASE}/settings`);
+await a.waitForSelector('text=Awaiting activation');
+await shot(a, '20-settings');
+check(sql(`select role from profiles where email='rana@demo.test'`) === 'outreach', 'self-signup role metadata ignored (admin claim → outreach)');
+// inactive user cannot use the app
+const r = await newPage(b);
+await login(r, 'rana@demo.test').catch(() => {});
+await r.waitForSelector('text=waiting for activation');
+check(true, 'inactive user sees activation screen, not data');
+await shot(r, '21-pending');
+// activate her as outreach
+await a.getByLabel('Role for Rana').selectOption('outreach');
+await a.waitForSelector('text=Role updated');
+await a.locator('li', { hasText: 'rana@demo.test' }).getByLabel('Active').click();
+await a.waitForSelector('text=User activated');
+check(sql(`select is_active from profiles where email='rana@demo.test'`) === 't', 'admin activates user');
+check(await a.getByLabel('Role for Mehedi').isDisabled(), 'admin cannot change own role');
+// business settings validation
+await a.getByLabel('Timezone').fill('Mars/Olympus');
+await a.getByRole('button', { name: 'Save settings' }).click();
+check(await a.getByRole('alert').getByText('isn’t recognised').isVisible(), 'invalid timezone rejected');
+await a.getByLabel('Timezone').fill('Asia/Dhaka');
+await a.getByLabel('Default currency').selectOption('BDT');
+await a.getByRole('button', { name: 'Save settings' }).click();
+await a.waitForSelector('text=Settings saved');
+check(sql(`select timezone||'/'||default_currency from app_settings`) === 'Asia/Dhaka/BDT', 'business settings stored');
+// manual lead
+await a.goto(`${BASE}/leads`);
+await a.getByRole('button', { name: 'New lead' }).click();
+await a.getByLabel('Business name').fill('Manual Plumbing Ltd');
+await a.getByLabel('Email').fill('not-an-email');
+await a.getByRole('button', { name: 'Create lead' }).click();
+check(await a.getByText('Enter a valid email address.').isVisible(), 'lead form validates email');
+await a.getByLabel('Email').fill('office@manual-plumbing.example');
+await a.getByLabel('Website').fill('manual-plumbing.example');
+await a.getByLabel('Assigned to (outreach)').selectOption({ label: 'Majeda' });
+await a.getByRole('button', { name: 'Create lead' }).click();
+await a.waitForURL(/#\/leads\/[0-9a-f-]{36}$/);
+check(sql(`select website from leads where business_name='Manual Plumbing Ltd'`) === 'https://manual-plumbing.example', 'website gets https:// without trailing slash');
+await a.getByText('No research report is attached').waitFor();
+check(true, 'lead without research shows graceful brief');
+const manualUrl = a.url();
+// sparse markdown upload
+await a.goto(`${BASE}/leads/upload`);
+await a.locator('input[type=file]').setInputFiles({ name: 'sparse.md', mimeType: 'text/markdown', buffer: Buffer.from('---\nbusiness_name: Sparse Co\npriority: urgent\n---\n\n# Main Opportunity\n\nFix the map pack.\n') });
+await a.waitForSelector('text=Check these before saving');
+check(await a.getByText('No phone or email found').first().isVisible(), 'warns about no contact method');
+check(await a.getByText('defaulted to Medium').isVisible(), 'warns about bad priority');
+await shot(a, '22-upload-warnings');
+await a.getByLabel('Business name').fill('');
+await a.getByRole('button', { name: 'Create lead' }).click();
+check(await a.getByText('Business name is required.').first().isVisible(), 'cannot create without a business name');
+await a.getByLabel('Business name').fill('Sparse Co');
+await a.getByLabel('Outreach owner').selectOption({ label: 'Rana' });
+await a.getByRole('button', { name: 'Create lead' }).click();
+await a.waitForSelector('text=Lead created and ready for outreach');
+check(sql(`select count(*) from prospect_reports r join leads l on l.id=r.lead_id where l.business_name='Sparse Co' and r.file_path is not null`) === '1', 'sparse report stored with file path');
+check(sql(`select assigned_to from leads where business_name='Sparse Co'`).endsWith('e1'), 'assigned to the chosen user');
+
+console.log('\nADMIN: handoff from lead page → MOSTAFA: lost / reopen');
+await a.goto(manualUrl);
+await a.waitForSelector('text=Next step');
+await a.getByLabel('Status').selectOption('Qualified');
+await a.getByRole('heading', { name: 'Hand off to Business Development' }).waitFor();
+await a.getByLabel('Handoff note').fill('Referral from existing client; wants quote for Maps + website.');
+await a.getByRole('button', { name: 'Hand off', exact: true }).click();
+await a.waitForSelector('text=Handed to Mostafa');
+check(sql(`select stage from deals`) === 'New Qualified Lead', 'deal opened at New Qualified Lead');
+const m = await newPage(b);
+await login(m, 'mostafa@demo.test');
+await m.getByRole('link', { name: 'Open deal' }).first().click();
+await m.waitForSelector('text=Business development');
+await m.getByRole('button', { name: 'Mark lost' }).click();
+await m.getByRole('button', { name: 'Mark as lost' }).click();
+check(await m.getByText('A short reason helps').isVisible(), 'lost requires a reason');
+await m.getByLabel('Why was it lost?').fill('Went with an in-house hire');
+await m.getByRole('button', { name: 'Mark as lost' }).click();
+await m.waitForSelector('text=Stage: Lost');
+check(sql(`select outreach_status from leads where business_name='Manual Plumbing Ltd'`) === 'Lost', 'lead mirrors Lost');
+check(await m.getByText('Went with an in-house hire').isVisible(), 'lost reason displayed');
+await m.getByRole('button', { name: 'Reopen' }).click();
+await m.getByRole('button', { name: 'Reopen', exact: true }).last().click();
+await m.waitForSelector('text=Stage: Discovery');
+check(sql(`select outreach_status from leads where business_name='Manual Plumbing Ltd'`) === 'Qualified', 'reopen returns lead to Qualified');
+
+console.log('\nCHANGE PASSWORD');
+await m.getByLabel(/Account menu/).click();
+await m.getByRole('menuitem', { name: 'Change password' }).click();
+await m.getByLabel(/^New password/).fill('short');
+await m.getByLabel('Confirm new password').fill('short');
+await m.getByRole('button', { name: 'Update password' }).click();
+check(await m.getByText('Use at least 8 characters.').isVisible(), 'password length validated');
+await m.keyboard.press('Escape');
+
+console.log('\nMOBILE');
+sql(`insert into leads (business_name, location, niche, priority, outreach_status, assigned_to, next_action, follow_up_date, phone) values
+ ('Overdue Electric', 'Austin, TX', 'Electrician', 'Medium', 'Follow-up', '00000000-0000-0000-0000-0000000000b1', 'Send the report', (now() at time zone 'Asia/Riyadh')::date - 3, '+1 555 0100'),
+ ('Today HVAC', 'Tampa, FL', 'HVAC', 'Low', 'Attempted', '00000000-0000-0000-0000-0000000000b1', 'Call again', (now() at time zone 'Asia/Riyadh')::date, '+1 555 0101'),
+ ('Fresh Roofing', 'Miami, FL', 'Roofing', 'High', 'Ready to Call', '00000000-0000-0000-0000-0000000000b1', null, null, '+1 555 0102'),
+ ('Calm Concrete', 'Orlando, FL', 'Concrete', 'Medium', 'Ready to Call', '00000000-0000-0000-0000-0000000000b1', null, null, '+1 555 0103')`);
+const dq = await newPage(b);
+await login(dq, 'majeda@demo.test');
+await dq.waitForSelector('text=Fresh Roofing');
+const order = await dq.locator('tbody tr:not(.bg-canvas) td:first-child a').allTextContents();
+check(order.join('|') === 'Overdue Electric|Today HVAC|Fresh Roofing|Calm Concrete', `queue order: overdue → today → high ready → medium ready (${order.join(', ')})`);
+await shot(dq, '29-queue-populated');
+const mm = await newPage(b, { mobile: true });
+await login(mm, 'majeda@demo.test');
+await mm.waitForSelector('text=Today’s queue');
+await shot(mm, '30-mobile-majeda-dashboard');
+check(await noOverflow(mm), 'no horizontal overflow: Majeda dashboard');
+await mm.getByRole('link', { name: 'Fresh Roofing' }).first().click();
+await mm.waitForSelector('text=Outreach brief');
+await shot(mm, '31-mobile-lead');
+check(await noOverflow(mm), 'no horizontal overflow: lead page');
+await mm.getByRole('button', { name: 'Log activity' }).click();
+await mm.getByRole('dialog').waitFor();
+await shot(mm, '32-mobile-activity');
+check(await noOverflow(mm), 'no horizontal overflow: activity sheet');
+const box = await mm.getByRole('button', { name: 'Save activity' }).boundingBox();
+check(box && box.height >= 36, `save button is tappable (${box?.height}px)`);
+await mm.getByRole('button', { name: 'Close' }).click();
+await mm.goto(`${BASE}/leads`);
+await mm.locator('li >> text=Fresh Roofing').first().waitFor();
+await shot(mm, '33-mobile-leads');
+check(await noOverflow(mm), 'no horizontal overflow: leads list');
+const mb = await newPage(b, { mobile: true });
+await login(mb, 'mostafa@demo.test');
+await mb.waitForSelector('text=Active deals');
+await shot(mb, '34-mobile-bd-dashboard');
+check(await noOverflow(mb), 'no horizontal overflow: BD dashboard');
+await mb.locator('li a[href*="/deals/"]').first().click();
+await mb.getByRole('heading', { name: 'Business development' }).waitFor();
+await shot(mb, '35-mobile-deal');
+check(await noOverflow(mb), 'no horizontal overflow: deal page');
+const ma = await newPage(b, { mobile: true });
+await login(ma, 'mehedi@demo.test');
+await ma.waitForSelector('text=at a glance');
+await shot(ma, '36-mobile-admin');
+check(await noOverflow(ma), 'no horizontal overflow: admin dashboard');
+await ma.goto(`${BASE}/settings`);
+await ma.waitForSelector('text=Awaiting activation').catch(() => {});
+await shot(ma, '37-mobile-settings');
+check(await noOverflow(ma), 'no horizontal overflow: settings');
+
+await b.close();
+process.exit(summary([['admin', a], ['mostafa', m], ['mobile', mm]]));
