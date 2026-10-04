@@ -1,0 +1,10 @@
+{
+  "name": "growwithmh-crm-e2e",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "description": "Local browser end-to-end harness: real Postgres + RLS migrations, PostgREST, auth/storage shim, headless Chromium",
+  "dependencies": {
+    "playwright-core": "^1.52.0"
+  }
+}
