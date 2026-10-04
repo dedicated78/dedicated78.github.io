@@ -11,7 +11,7 @@ create or replace function public.create_lead_with_report(
   p_report    jsonb,
   p_file_path text
 ) returns uuid
-language plpgsql security invoker set search_path = public as $$
+language plpgsql security invoker set search_path = '' as $$
 begin
   if not public.is_admin() then
     raise exception 'Only an admin can create leads' using errcode = 'insufficient_privilege';
@@ -70,7 +70,7 @@ create or replace function public.add_report_version(
   p_file_path       text,
   p_sync_lead       boolean default true
 ) returns integer
-language plpgsql security invoker set search_path = public as $$
+language plpgsql security invoker set search_path = '' as $$
 declare
   next_version integer;
 begin
@@ -127,7 +127,7 @@ create or replace function public.log_activity(
   p_new_status     text default null,
   p_deal_id        uuid default null
 ) returns uuid
-language plpgsql security invoker set search_path = public as $$
+language plpgsql security invoker set search_path = '' as $$
 declare
   new_id uuid;
 begin
@@ -164,7 +164,7 @@ create or replace function public.hand_off_to_bd(
   p_note    text,
   p_status  text default null
 ) returns uuid
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = '' as $$
 declare
   caller_role text := public.app_role();
   l public.leads%rowtype;
@@ -248,7 +248,7 @@ create or replace function public.convert_deal_to_client(
   p_billing_type  text,
   p_start_date    date
 ) returns uuid
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = '' as $$
 declare
   d public.deals%rowtype;
   new_client uuid;
@@ -307,3 +307,6 @@ grant execute on function public.add_report_version(uuid, jsonb, text, boolean) 
 grant execute on function public.log_activity(uuid, text, text, text, text, date, text, uuid) to authenticated;
 grant execute on function public.hand_off_to_bd(uuid, uuid, text, text) to authenticated;
 grant execute on function public.convert_deal_to_client(uuid, text, text, text, text, text, text, numeric, text, date) to authenticated;
+
+-- Make PostgREST pick up the new functions immediately (hosted Supabase also does this on DDL; harmless either way).
+notify pgrst, 'reload schema';

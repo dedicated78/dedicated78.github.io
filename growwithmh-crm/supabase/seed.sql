@@ -1,7 +1,7 @@
 -- GrowwithMH CRM — OPTIONAL DEMO DATA (fictional businesses only).
 --
 -- Prerequisite: create your users first (Supabase → Authentication → Users → Add user) and give them roles in
--- the app's Settings page: at least one admin, one outreach, one business_development user.
+-- the app's Settings page (the admin itself is assigned with SQL, see README 7.1): one admin, one outreach, one business_development user.
 -- The seed attaches the demo records to the first active user of each role (outreach / BD fall back to the admin).
 --
 -- Run in the Supabase SQL editor. Re-running is safe: it does nothing if demo data already exists.
@@ -20,7 +20,7 @@ begin
   end if;
 
   select id into admin_id from public.profiles where role = 'admin' and is_active order by created_at limit 1;
-  if admin_id is null then raise exception 'Create and activate an admin user first.'; end if;
+  if admin_id is null then raise exception 'Create the first admin first (README §7.1: promote the profile with SQL).'; end if;
   select coalesce((select id from public.profiles where role = 'outreach' and is_active order by created_at limit 1), admin_id) into outreach_id;
   select coalesce((select id from public.profiles where role = 'business_development' and is_active order by created_at limit 1), admin_id) into bd_id;
 

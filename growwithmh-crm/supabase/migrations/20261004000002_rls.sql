@@ -10,19 +10,19 @@
 -- Helpers (SECURITY DEFINER so they can read profiles/leads without recursing into RLS)
 -- ---------------------------------------------------------------------------
 create or replace function public.app_role() returns text
-language sql stable security definer set search_path = public as $$
+language sql stable security definer set search_path = '' as $$
   select role from public.profiles where id = auth.uid() and is_active
 $$;
 
 create or replace function public.is_admin() returns boolean
-language sql stable security definer set search_path = public as $$
+language sql stable security definer set search_path = '' as $$
   select coalesce((select role = 'admin' from public.profiles where id = auth.uid() and is_active), false)
 $$;
 
 -- Row-level visibility rule for a lead, expressed on the row's own columns so it also works inside
 -- INSERT ... RETURNING / UPDATE ... WITH CHECK (where a function that re-reads the table can't see the new row yet).
 create or replace function public.lead_visible(p_assigned_to uuid, p_bd_assigned_to uuid, p_archived boolean) returns boolean
-language sql stable security definer set search_path = public as $$
+language sql stable security definer set search_path = '' as $$
   select coalesce((
     select p.role = 'admin'
         or (not p_archived and p.role = 'outreach' and p_assigned_to = p.id)
@@ -34,7 +34,7 @@ $$;
 
 -- Same rule for "does lead X exist and can I see it" (used by reports, activities and storage).
 create or replace function public.can_access_lead(p_lead_id uuid) returns boolean
-language sql stable security definer set search_path = public as $$
+language sql stable security definer set search_path = '' as $$
   select exists (
     select 1 from public.leads l
     where l.id = p_lead_id and public.lead_visible(l.assigned_to, l.bd_assigned_to, l.archived)
@@ -43,7 +43,7 @@ $$;
 
 -- storage object names look like "{lead_id}/{version}-{file}.md"
 create or replace function public.can_access_report_path(p_name text) returns boolean
-language plpgsql stable security definer set search_path = public as $$
+language plpgsql stable security definer set search_path = '' as $$
 declare
   folder text := split_part(p_name, '/', 1);
 begin
@@ -69,7 +69,7 @@ grant execute on function public.can_access_report_path(text) to authenticated;
 -- They only constrain the `authenticated` API role; SQL editor / definer RPCs are unaffected.
 -- ---------------------------------------------------------------------------
 create or replace function public.leads_guard() returns trigger
-language plpgsql as $$
+language plpgsql set search_path = '' as $$
 declare
   r text;
   allowed text[];
@@ -96,11 +96,13 @@ begin
   return new;
 end $$;
 
+revoke all on function public.leads_guard() from public, anon, authenticated;
+
 create trigger leads_guard_trg before update on public.leads
   for each row execute function public.leads_guard();
 
 create or replace function public.deals_guard() returns trigger
-language plpgsql as $$
+language plpgsql set search_path = '' as $$
 begin
   if current_user = 'authenticated' and not public.is_admin() then
     if new.lead_id is distinct from old.lead_id or new.assigned_to is distinct from old.assigned_to then
@@ -121,12 +123,14 @@ begin
   return new;
 end $$;
 
+revoke all on function public.deals_guard() from public, anon, authenticated;
+
 create trigger deals_guard_trg before update on public.deals
   for each row execute function public.deals_guard();
 
 -- Closing a deal mirrors onto the lead; re-opening a closed deal puts the lead back to Qualified.
 create or replace function public.sync_lead_from_deal() returns trigger
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = '' as $$
 begin
   if new.stage is distinct from old.stage then
     if new.stage = 'Won' then
@@ -140,6 +144,8 @@ begin
   end if;
   return null;
 end $$;
+
+revoke all on function public.sync_lead_from_deal() from public, anon, authenticated;
 
 create trigger deals_sync_lead_trg after update on public.deals
   for each row execute function public.sync_lead_from_deal();
@@ -160,7 +166,7 @@ alter table public.client_access    enable row level security;
 -- profiles
 -- ---------------------------------------------------------------------------
 create policy profiles_select on public.profiles for select to authenticated
-  using (id = auth.uid() or public.app_role() is not null);
+  using (id = (select auth.uid()) or public.app_role() is not null);
 
 create policy profiles_admin_update on public.profiles for update to authenticated
   using (public.is_admin()) with check (public.is_admin());
@@ -195,7 +201,7 @@ create policy reports_select on public.prospect_reports for select to authentica
   using (public.can_access_lead(lead_id));
 
 create policy reports_admin_insert on public.prospect_reports for insert to authenticated
-  with check (public.is_admin() and uploaded_by = auth.uid());
+  with check (public.is_admin() and uploaded_by = (select auth.uid()));
 
 create policy reports_admin_update on public.prospect_reports for update to authenticated
   using (public.is_admin()) with check (public.is_admin());
@@ -207,7 +213,7 @@ create policy activities_select on public.activities for select to authenticated
   using (public.can_access_lead(lead_id));
 
 create policy activities_insert on public.activities for insert to authenticated
-  with check (created_by = auth.uid() and public.can_access_lead(lead_id));
+  with check (created_by = (select auth.uid()) and public.can_access_lead(lead_id));
 
 create policy activities_admin_update on public.activities for update to authenticated
   using (public.is_admin()) with check (public.is_admin());
@@ -271,3 +277,9 @@ create policy client_access_admin_delete on public.client_access for delete to a
 -- ---------------------------------------------------------------------------
 revoke all on all tables in schema public from anon;
 grant select, insert, update, delete on all tables in schema public to authenticated;
+
+-- Hosted Supabase grants new tables/functions to anon by default. Close that door for anything created later too
+-- (these defaults apply to objects created by the role running the migration, i.e. `postgres`).
+alter default privileges in schema public revoke all on tables    from anon;
+alter default privileges in schema public revoke all on sequences from anon;
+alter default privileges in schema public revoke all on functions from anon;

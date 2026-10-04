@@ -50,7 +50,7 @@ docs/            prospect-report-template.md · sample-prospect-report.md · res
 2. **Run the migrations in order** (`supabase/migrations/`):
    - CLI: `supabase link --project-ref <ref>` then `supabase db push`
    - or SQL editor: paste and run `…0001_schema.sql`, `…0002_rls.sql`, `…0003_storage.sql`, `…0004_functions.sql`, in that order.
-3. **Authentication → Providers → Email:** keep email/password on. **Turn "Allow new users to sign up" OFF** (Authentication → Sign In / Providers). Users are added by an admin, never self-registered. (Even if left on, new sign-ups are created *inactive* with no data access.)
+3. **Authentication → Providers → Email:** keep email/password on. **Turn "Allow new users to sign up" OFF** (Authentication → Sign In / Providers). Users are added by an admin, never self-registered. (Even if left on, a self-registered user is created *inactive* with no data access and cannot make themselves admin.)
 4. **Authentication → URL Configuration:** set **Site URL** to where you host the app (e.g. `https://crm.growwithmh.com/`). Add the same URL (and `http://localhost:5173`) to **Redirect URLs**. The app uses password sign-in only, so no email links are involved, but Supabase requires a valid Site URL.
 5. **Storage:** the `prospect-reports` bucket is created by migration 3 — private, 2 MB limit, Markdown/plain text only. Nothing to click. Access is governed by storage policies: admin writes, everyone else can read only the files of leads they can open.
 
@@ -76,13 +76,34 @@ npm run typecheck
 npm test             # Markdown parser tests
 ```
 
-## 7. Creating users
+## 7. Creating users and the first admin
 
-**First admin (Mehedi):** Supabase → Authentication → Users → **Add user** (email + password, tick *Auto Confirm*). The **first user ever created automatically becomes the active admin**. Set his display name in Settings afterwards if you like.
+**Authorization model:** every new auth user gets a profile that is **inactive** with the least-privileged role (`outreach`). Nobody becomes admin automatically: not the first user, not anyone who sets `admin` in their sign-up metadata. The initial admin is assigned explicitly with SQL, exactly once. After that, only an **active admin** can activate users and change roles, from **Settings → Users**.
 
-**Majeda and Mostafa:** add them the same way. They appear in the app under **Settings → Users** as *Awaiting activation*. Mehedi picks the role (**Outreach** for Majeda, **Business Development** for Mostafa) and ticks **Active**. Until then they can sign in but see only an "account waiting for activation" screen.
+### 7.1 Initial admin setup (one time, in this order)
 
-Role and active flag are never read from user metadata, so nobody can promote themselves. Forgot a password? Reset it in Supabase → Authentication → Users. Everyone can change their own password from the avatar menu.
+1. Supabase → **Authentication → Users → Add user → Create new user**: Mehedi's email + a strong password, tick **Auto Confirm User**.
+2. Supabase → **SQL Editor**, run (replace the email):
+
+   ```sql
+   update public.profiles
+      set role = 'admin', is_active = true, full_name = 'Mehedi'
+    where email = 'mehedi@your-domain.com';
+
+   -- must show exactly one row: role admin, is_active true
+   select id, email, role, is_active from public.profiles order by created_at;
+   ```
+
+   It must report `UPDATE 1`. If it reports `UPDATE 0`, the profile doesn't exist yet: the migrations were applied after the user was created and the backfill didn't run, or the email is mistyped. Check `select email from auth.users;`.
+3. Sign in to the app as Mehedi. You land on the admin dashboard and see **Settings** in the navigation. Until step 2 is done, signing in shows "Your account is waiting for activation" — that is the correct locked state.
+
+The SQL editor runs as the database owner, which is why it can do what the app's admin-only rules forbid for everyone else. Keep it for break-glass use: if the only admin is ever locked out, re-run step 2 for any user.
+
+### 7.2 Majeda and Mostafa
+
+Add each in **Authentication → Users → Add user** (Auto Confirm). They appear in the app under **Settings → Users** as *Awaiting activation*. Signed in as Mehedi: choose the role (**Outreach** for Majeda, **Business Development** for Mostafa) and tick **Active**. Until then they can sign in but see only the "waiting for activation" screen and no data.
+
+Role and active flag are stored only in `public.profiles` and changeable only by an active admin. User metadata (which any signed-in user can edit about themselves), app metadata and JWT claims are never consulted for authorization. Deactivating a user takes effect on their next request. At least one active admin must always exist (the database refuses to demote or deactivate the last one). Forgot a password? Reset it in Supabase → Authentication → Users. Everyone can change their own password from the avatar menu.
 
 ### Demo data (optional)
 
@@ -146,12 +167,13 @@ Missing optional fields never block an upload; only the business name is require
 | Clients & onboarding | all (edit, delete) | ❌ | read-only for clients from their deals |
 | Settings, users | ✅ | ❌ | ❌ |
 
-Column-level rules are enforced by triggers (e.g. outreach cannot rename a lead or reassign it, BD cannot reassign a deal). Leads, reports, activities have no delete policy at all: archive instead. `supabase/tests/rls_test.sql` asserts all of this (95 checks) — run it against a scratch database after changing policies.
+Column-level rules are enforced by triggers (e.g. outreach cannot rename a lead or reassign it, BD cannot reassign a deal). Leads, reports, activities have no delete policy at all: archive instead. `supabase/tests/rls_test.sql` asserts all of this (141 checks, see §13) — run it against a scratch database after changing policies.
 
 ## 11. Security notes
 
 - Only the anon key is used in the browser. RLS is enabled on every table; signed-out visitors get nothing.
-- New sign-ups are inactive; roles come only from `profiles`, editable only by admins. At least one active admin always exists (trigger).
+- New sign-ups are always inactive; no admin is created automatically; the initial admin is assigned explicitly with SQL (§7.1). Roles come only from `profiles`, editable only by an active admin; user/app metadata and JWT claims never influence authorization. A profile's id/email can't be changed through the API. At least one active admin always exists (trigger).
+- Every function in `public` pins `search_path`; SECURITY DEFINER functions use an empty one. `anon` has no table privileges and can execute no function; trigger functions are executable by no API role.
 - Markdown is untrusted: rendered with `marked` then sanitised with DOMPurify (no scripts, forms, images, iframes, inline styles; links forced to `noopener`).
 - The `prospect-reports` bucket is private. Downloads use 60-second signed URLs, authorised by storage policy.
 - **Do not store passwords or credentials.** The client access checklist only records *whether* access was granted, and says so on screen.
@@ -163,3 +185,9 @@ Column-level rules are enforced by triggers (e.g. outreach cannot rename a lead 
 - Notifications are in-app only (bell + dashboard), derived from live data; there is no email/SMS/push.
 - Dashboards load all *visible* leads/deals/clients (paged 1,000 at a time). That's ideal for thousands of records; revisit with server-side counts if you reach tens of thousands.
 - "Today" and follow-up dates use the company timezone from Settings (default `Asia/Riyadh`).
+
+## 13. Verifying a real hosted project
+
+`docs/hosted-supabase-verification.md` is the step-by-step acceptance checklist (24 steps, each with its expected outcome): project creation, migrations, bucket, the three accounts, a full prospect-to-client run, storage permissions, lockout, sessions and mobile.
+
+Authorization regression test (`supabase/tests/rls_test.sql`, 141 checks): run it **once on an empty scratch project** right after the migrations, before any real user or data exists. It creates fake users, exercises sign-up, bootstrap, lockout, elevation attempts, column guards, RPCs, storage policies and grants, then aborts itself so nothing persists. Paste the file into the SQL editor (or `psql -f`); the expected result is an *error* whose first line reads `RLS TESTS PASSED: 141 passed, 0 failed`.

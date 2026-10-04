@@ -17,7 +17,7 @@ create table public.profiles (
 );
 
 comment on table public.profiles is
-  'App users. New sign-ups are inactive outreach users until an admin activates them. The very first user becomes the active admin.';
+  'App users. Every new auth user gets an INACTIVE outreach profile. Nobody becomes admin automatically: the first admin is assigned explicitly with SQL (see README), later roles are changed by an active admin in the app.';
 
 -- ---------------------------------------------------------------------------
 -- app_settings (single row)
@@ -207,7 +207,7 @@ create index client_access_client_idx on public.client_access (client_id);
 -- Triggers
 -- ---------------------------------------------------------------------------
 create or replace function public.touch_updated_at() returns trigger
-language plpgsql as $$
+language plpgsql set search_path = '' as $$
 begin
   new.updated_at := now();
   return new;
@@ -220,22 +220,22 @@ create trigger deals_touch         before update on public.deals         for eac
 create trigger clients_touch       before update on public.clients       for each row execute function public.touch_updated_at();
 create trigger client_access_touch before update on public.client_access for each row execute function public.touch_updated_at();
 
--- New auth user → profile. Role/active are NEVER read from user metadata (users can set that themselves).
--- First user ever = active admin. Everyone else = inactive outreach until an admin activates them in Settings.
+-- New auth user → profile. ALWAYS inactive, role 'outreach' (the least-privileged role).
+-- Nothing is read from user/app metadata and signup order grants nothing: users can write their own
+-- raw_user_meta_data, so it must never influence authorization. Admins are assigned explicitly via SQL;
+-- everyone else is activated and given a role by an active admin in Settings.
 create or replace function public.handle_new_user() returns trigger
-language plpgsql security definer set search_path = public as $$
-declare
-  is_first boolean;
+language plpgsql security definer set search_path = '' as $$
 begin
-  select not exists (select 1 from public.profiles) into is_first;
   insert into public.profiles (id, email, full_name, role, is_active)
   values (
     new.id,
     new.email,
     coalesce(nullif(btrim(new.raw_user_meta_data ->> 'full_name'), ''), split_part(coalesce(new.email, ''), '@', 1)),
-    case when is_first then 'admin' else 'outreach' end,
-    is_first
-  );
+    'outreach',
+    false
+  )
+  on conflict (id) do nothing;
   return new;
 end $$;
 
@@ -243,9 +243,17 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
+-- Users created before this migration ran (e.g. added in the dashboard first) get the same inactive profile.
+insert into public.profiles (id, email, full_name, role, is_active)
+select u.id, u.email,
+       coalesce(nullif(btrim(u.raw_user_meta_data ->> 'full_name'), ''), split_part(coalesce(u.email, ''), '@', 1)),
+       'outreach', false
+from auth.users u
+on conflict (id) do nothing;
+
 -- Keep profiles.email in sync if the auth email changes.
 create or replace function public.sync_profile_email() returns trigger
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = '' as $$
 begin
   update public.profiles set email = new.email where id = new.id;
   return new;
@@ -255,10 +263,21 @@ create trigger on_auth_user_email_changed
   after update of email on auth.users
   for each row execute function public.sync_profile_email();
 
--- Never leave the system without an active admin.
+-- Profile guard:
+--  * API callers (role `authenticated`) can never change a profile's id, email or created_at
+--    (email is mirrored from auth by a trigger); role/is_active/full_name changes are limited to admins by RLS.
+--  * The system can never be left without an active admin.
 create or replace function public.profiles_guard() returns trigger
-language plpgsql as $$
+language plpgsql set search_path = '' as $$
 begin
+  if current_user = 'authenticated' and (
+       new.id is distinct from old.id
+    or new.email is distinct from old.email
+    or new.created_at is distinct from old.created_at
+  ) then
+    raise exception 'id, email and created_at cannot be changed here' using errcode = 'insufficient_privilege';
+  end if;
+
   if old.role = 'admin' and old.is_active and (new.role <> 'admin' or not new.is_active) then
     if not exists (
       select 1 from public.profiles where role = 'admin' and is_active and id <> old.id
@@ -274,7 +293,7 @@ create trigger profiles_guard_trg before update on public.profiles
 
 -- Client access status is derived from the checklist.
 create or replace function public.refresh_client_access_status() returns trigger
-language plpgsql as $$
+language plpgsql set search_path = '' as $$
 declare
   cid uuid := coalesce(new.client_id, old.client_id);
   total int;
@@ -305,3 +324,10 @@ end $$;
 create trigger client_access_status_trg
   after insert or update or delete on public.client_access
   for each row execute function public.refresh_client_access_status();
+
+-- Trigger functions are never called directly: nobody (including the API roles) needs EXECUTE on them.
+revoke all on function public.touch_updated_at()              from public, anon, authenticated;
+revoke all on function public.handle_new_user()               from public, anon, authenticated;
+revoke all on function public.sync_profile_email()            from public, anon, authenticated;
+revoke all on function public.profiles_guard()                from public, anon, authenticated;
+revoke all on function public.refresh_client_access_status()  from public, anon, authenticated;
