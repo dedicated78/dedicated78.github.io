@@ -25,7 +25,7 @@ The audio WAVs aren't committed. `studio`, `render` and `player` regenerate them
 
 In Studio, `GrowwithMHIntro` is the full film. `Scenes/Scene-S1` … `Scene-S7` preview one scene each, with 15 frames of handles on either side.
 
-On headless Linux, add `--browser-executable=<path to chrome-headless-shell>` if Remotion can't download its own browser.
+On headless Linux, add `--browser-executable=<path to chrome-headless-shell>` if Remotion can't download its own browser. If a long single render stalls on a slow machine, `bash scripts/render-chunked.sh` renders in 300-frame chunks and encodes once with ffmpeg. It produces the same H.264/AAC 40.0 s output.
 
 ## Where to edit
 
