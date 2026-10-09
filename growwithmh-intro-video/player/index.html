@@ -1,0 +1,63 @@
+<title>GrowwithMH Intro Film</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&display=swap">
+<style>
+  /* Layout: film on the left, voiceover + scene index on the right; stacks on phones. */
+  :root {
+    --bg: #FBFAF6;
+    --surface: #FFFFFF;
+    --fg: #192B2A;
+    --muted: #61716A;
+    --line: rgba(25, 43, 42, 0.12);
+    --accent: #17615A;
+    --accent-soft: rgba(183, 216, 197, 0.45);
+    --dot: #DE8957;
+    --font: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0F1D1C; --surface: #192B2A; --fg: #FBFAF6; --muted: #A9BAB1;
+      --line: rgba(183, 216, 197, 0.16); --accent: #B7D8C5; --accent-soft: rgba(183, 216, 197, 0.14);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0F1D1C; --surface: #192B2A; --fg: #FBFAF6; --muted: #A9BAB1;
+    --line: rgba(183, 216, 197, 0.16); --accent: #B7D8C5; --accent-soft: rgba(183, 216, 197, 0.14);
+    color-scheme: dark;
+  }
+  body { background: var(--bg); color: var(--fg); font-family: var(--font); }
+  .wrap { max-width: 980px; margin: 0 auto; padding-inline: 20px; padding-block: 28px 40px; }
+  header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 22px; }
+  .brand { font-weight: 700; font-size: 1.5rem; letter-spacing: -0.03em; margin: 0; }
+  .brand b { color: var(--accent); font-weight: 700; }
+  .brand i { display: inline-block; width: 0.32em; height: 0.32em; border-radius: 50%; background: var(--dot); margin-left: 0.06em; }
+  .spec { color: var(--muted); font-size: 0.85rem; margin: 0; font-variant-numeric: tabular-nums; }
+  .layout { display: grid; grid-template-columns: minmax(0, 400px) minmax(0, 1fr); gap: 32px; align-items: start; }
+  .stage { width: 100%; max-width: 400px; margin: 0 auto; box-shadow: 0 30px 60px -30px rgba(15, 29, 28, 0.55); border-radius: 18px; }
+  .side { min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+  .eyebrow { margin: 0; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .vo { margin: 0; font-size: 1.3rem; line-height: 1.4; font-weight: 600; letter-spacing: -0.01em; text-wrap: balance; min-height: 3.6em; }
+  .scenes { list-style: none; margin: 8px 0 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+  .scenes button {
+    width: 100%; display: flex; gap: 14px; align-items: center; text-align: left; cursor: pointer;
+    font: inherit; color: var(--fg); background: var(--surface); border: 1px solid var(--line);
+    border-radius: 12px; padding: 10px 14px;
+  }
+  .scenes button:hover { border-color: var(--accent); }
+  .scenes button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .scenes button.on { background: var(--accent-soft); border-color: var(--accent); }
+  .scenes .t { font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; width: 2.6em; flex: none; }
+  .scenes .n { font-weight: 600; font-size: 0.95rem; }
+  .note { margin: 6px 0 0; color: var(--muted); font-size: 0.85rem; line-height: 1.5; max-width: 60ch; }
+  @media (max-width: 760px) { .layout { grid-template-columns: minmax(0, 1fr); } .vo { min-height: 0; } }
+</style>
+<div class="wrap">
+  <header>
+    <p class="brand">Growwith<b>MH</b><i></i> intro film</p>
+    <p class="spec">40 s &middot; 1080 &times; 1920 &middot; 30 fps</p>
+  </header>
+  <div id="app"></div>
+</div>
+<script src="app.js"></script>

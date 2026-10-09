@@ -1,0 +1,27 @@
+{
+  "name": "growwithmh-intro-video",
+  "private": true,
+  "version": "1.0.0",
+  "description": "GrowwithMH 40s 9:16 company introduction video (Remotion)",
+  "scripts": {
+    "audio": "node scripts/generate-audio.mjs",
+    "studio": "node scripts/generate-audio.mjs && remotion studio src/index.ts",
+    "render": "node scripts/generate-audio.mjs && remotion render src/index.ts GrowwithMHIntro out/growwithmh-intro.mp4",
+    "still": "remotion still src/index.ts GrowwithMHIntro out/still.png",
+    "player": "node scripts/generate-audio.mjs && node scripts/build-player.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@remotion/cli": "4.0.300",
+    "@remotion/player": "4.0.300",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "remotion": "4.0.300"
+  },
+  "devDependencies": {
+    "@types/react": "19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "esbuild": "^0.25.0",
+    "typescript": "5.8.3"
+  }
+}
