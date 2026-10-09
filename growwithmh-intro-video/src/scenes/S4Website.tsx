@@ -1,495 +1,355 @@
 import React from 'react';
 import {AbsoluteFill} from 'remotion';
 import {COPY} from '../content';
-import {C, shadow} from '../theme';
-import {E, kf, lerp, mix, prog, rand, tw} from '../lib/anim';
-import {Bar, Brackets, CreamEnv, RevealLine, body, headline} from '../components/Primitives';
+import {C, FONT_TEXT} from '../theme';
+import {B} from '../beats';
+import {E, kf, lerp, mix, prog} from '../lib/anim';
+import {CreamEnv} from '../components/Primitives';
 import {Icon, IconName} from '../components/Icons';
-import {Plane, Stage} from '../components/Stage';
-import {BusinessPanel, PANEL, PANEL_HANDOFF, PANEL_REST} from './S3Local';
+import {Stage} from '../components/Stage';
+import {Card3D, EDGE, Obj, POSE0, Pose, mixPose} from '../components/Card3D';
+import {H, KLine} from '../components/Faces';
+import {CARD3, PERSPECTIVE, SITE4, SITE4_BLOCK, site4BlockScreen} from '../layout';
+import {CARD3_REST, ProfileCard, ROTATE_START} from './S3Local';
 
-// Scene 4 · 14–21s · Website foundations and content
-// Bridge in: Scene 3's business panel rotates edge-on and returns as a website while
-// light sweeps the frame from charcoal to cream. An inspection scan then stops on three
-// areas and each one visibly becomes more organised. Bridge out: the services block
-// lifts out of the page (continued in S5).
+// Scene 4 · bars 9–12 · 12.8–19.2 s · Website clarity
+// The profile card turns edge-on (bar 8 beat 4) and comes round as a website while the
+// light sweeps charcoal → cream. On bar 9 beat 3 the page separates into three layers
+// (exploded view). The ring scans them on bar 10: structure aligns, content sharpens,
+// links connect. On the bar-11 accent the layers slam back together. On the bar-12 snare
+// the "What we do" block lifts forward and is carried into Scene 5.
 
-export const BROWSER = {cx: 540, cy: 990, w: 840, h: 960};
-const SWAP = 410; // panel is edge-on: swap business face for website face
+const SWAP = B(9); // 384: edge-on, swap card for website
+const EXPLODE = B(9, 3);
+const SCAN = [B(10, 1, 1), B(10, 2, 1), B(10, 3, 1)]; // structure, content, links react
+const REASSEMBLE = B(11);
+export const LIFT = B(12, 2); // 540
+export const LIFT_HANDOFF = B(12, 3, 2); // 558: Scene 5 draws the block from here
 
-// Inspection stops (panel-local y of the scan line) and timing.
-const STOPS = [
-  {at: 452, y: 290, box: {x: 20, y: 140, w: 800, h: 300}},
-  {at: 500, y: 590, box: {x: 20, y: 450, w: 800, h: 270}},
-  {at: 552, y: 830, box: {x: 20, y: 728, w: 800, h: 212}},
-];
-const CALLOUT_AT = [470, 520, 572];
-const CALLOUT_ICON: IconName[] = ['gear', 'page', 'link'];
+const REST: Pose = {...POSE0, rx: 3, ry: 5};
+const EXPLODED: Pose = {...POSE0, y: 40, rx: 52, ry: 0, rz: -24, s: 0.74};
+const GAP = 190;
 
-/** Services section rect in screen space at the lift (camera at rest). */
-export const SERVICES_SCREEN = {cx: 540, cy: BROWSER.cy - BROWSER.h / 2 + 585, w: 800, h: 270};
-export const LIFT_HANDOFF = 606;
+const groupPose = (f: number): Pose => {
+  if (f < SWAP) {
+    const a = prog(f, ROTATE_START, SWAP - ROTATE_START, E.in);
+    return mixPose({...CARD3_REST, y: CARD3.cy - SITE4.cy}, {...POSE0, y: (CARD3.cy - SITE4.cy) * 0.4, ry: -90}, a);
+  }
+  const b = prog(f, SWAP, 12, E.back);
+  const arrive = mixPose({...POSE0, ry: 90, rx: 6}, REST, b);
+  const ex = prog(f, EXPLODE, 12, E.out);
+  const back = prog(f, REASSEMBLE - 4, 6, E.in);
+  const exploded = mixPose(arrive, EXPLODED, ex * (1 - back));
+  const recede = prog(f, LIFT + 6, 22, E.in);
+  return mixPose(exploded, {...REST, z: -700, rx: 28, y: 140}, recede);
+};
+const gapAt = (f: number) => GAP * prog(f, EXPLODE, 12, E.out) * (1 - prog(f, REASSEMBLE - 4, 6, E.in)) + kf(f, [REASSEMBLE + 1, REASSEMBLE + 3, REASSEMBLE + 8], [0, 14, 0], E.soft);
+
+/** Pose + size of the lifted "What we do" block (shared with Scene 5). */
+export const liftedBlock = (f: number) => {
+  const s = site4BlockScreen();
+  const up = prog(f, LIFT, 8, E.out);
+  const fly = prog(f, LIFT + 8, 22, E.in);
+  return {
+    cx: s.cx,
+    cy: lerp(s.cy, 930, fly),
+    w: lerp(s.w, 820, fly),
+    h: lerp(s.h, 300, fly),
+    pose: {...POSE0, y: -36 * up, z: 160 * up + 80 * fly, rx: lerp(3, -8, up) + 8 * fly, ry: lerp(5, -90, fly)} as Pose,
+  };
+};
 
 export const S4Website: React.FC<{frame: number}> = ({frame: f}) => {
-  // --- Rotation bridge (S3 -> S4) ---
-  const a = prog(f, PANEL_HANDOFF, SWAP - PANEL_HANDOFF, E.in);
-  const b = prog(f, SWAP, 24, E.out);
-  const settle = prog(f, SWAP + 20, 24, E.soft);
-  // S3 camera at hand-off: s = 0.94 around (540, 1080).
-  const startCy = 1080 + (PANEL.cy - 1080) * 0.94;
-  const showBusiness = f < SWAP;
-  const ry = showBusiness ? lerp(PANEL_REST.ry, -90, a) : lerp(90, 8, b) - settle * 5;
-  const rx = showBusiness ? lerp(PANEL_REST.rx, 6, a) : lerp(6, 3, b) - settle * 1;
-  const pcx = 540;
-  const pcy = showBusiness ? lerp(startCy, 950, a) : lerp(950, BROWSER.cy, b);
-  const ps = showBusiness ? lerp(0.94, 1, a) : 1;
-
-  const wipe = prog(f, 398, 30, E.inOut);
-  const wipeMask = wipe >= 1 ? undefined : `linear-gradient(to left, black ${wipe * 130 - 20}%, transparent ${wipe * 130}%)`;
-
-  // --- Camera: close-up on services during stop 2 ---
-  const close = kf(f, [508, 530], [0, 1], E.inOut) * (1 - kf(f, [556, 582], [0, 1], E.inOut));
-  const camS = 1 + close * 0.36;
-  const camY = lerp(BROWSER.cy, SERVICES_SCREEN.cy, close);
-
-  // --- Exit (S4 -> S5) ---
-  const lift = prog(f, 598, 10, E.out);
-  const recede = prog(f, LIFT_HANDOFF, 26, E.in);
-
-  // --- Work progress ---
-  const tech = prog(f, 476, 20, E.inOut);
-  const svc = prog(f, 526, 22, E.inOut);
-  const links = prog(f, 576, 20, E.inOut);
-
-  // Scan line position (panel-local y)
-  const scanY = kf(
-    f,
-    [440, STOPS[0].at, STOPS[0].at + 40, STOPS[1].at, STOPS[1].at + 44, STOPS[2].at, STOPS[2].at + 40],
-    [0, STOPS[0].y, STOPS[0].y, STOPS[1].y, STOPS[1].y, STOPS[2].y, STOPS[2].y],
-    E.inOut,
-  );
-  const scanOn = tw(f, 440, 10, 0, 1) * (1 - prog(f, 594, 10, E.soft));
+  const gp = groupPose(f);
+  const gap = gapAt(f);
+  const ex = prog(f, EXPLODE, 12, E.out) * (1 - prog(f, REASSEMBLE - 4, 6, E.in));
+  const wipe = prog(f, ROTATE_START + 2, 14, E.inOut);
+  const wipeMask = wipe >= 1 ? undefined : `linear-gradient(to left, black ${wipe * 130 - 25}%, transparent ${wipe * 130}%)`;
+  const fade = 1 - prog(f, LIFT + 14, 14, E.soft);
+  const scan = SCAN.map((t) => prog(f, t, 8, E.inOut));
+  const flash = kf(f, [REASSEMBLE, REASSEMBLE + 1, REASSEMBLE + 7], [0, 1, 0], E.linear);
 
   return (
     <AbsoluteFill>
       <AbsoluteFill style={{maskImage: wipeMask, WebkitMaskImage: wipeMask}}>
-        <CreamEnv haloY={900} halo={1 - recede * 0.6} />
+        <CreamEnv haloY={1000} halo={1} lines={0.7} />
       </AbsoluteFill>
-      {/* Light band riding the wipe edge */}
       {wipe > 0 && wipe < 1 && (
-        <AbsoluteFill
-          style={{
-            pointerEvents: 'none',
-            background: `linear-gradient(to left, rgba(0,0,0,0) ${wipe * 130 - 26}%, rgba(183,216,197,0.55) ${wipe * 130 - 8}%, rgba(251,250,246,0.9) ${wipe * 130 - 2}%, rgba(0,0,0,0) ${wipe * 130 + 4}%)`,
-            filter: 'blur(24px)',
-          }}
-        />
+        <AbsoluteFill style={{background: `linear-gradient(to left, rgba(0,0,0,0) ${wipe * 130 - 30}%, rgba(183,216,197,0.7) ${wipe * 130 - 6}%, rgba(251,250,246,0.95) ${wipe * 130 - 1}%, rgba(0,0,0,0) ${wipe * 130 + 3}%)`, filter: 'blur(18px)'}} />
       )}
 
-      <Stage cam={{x: 540, y: camY, s: camS}}>
-        <Plane
-          cx={pcx}
-          cy={pcy + recede * 80}
-          w={showBusiness ? PANEL.w : BROWSER.w}
-          h={showBusiness ? PANEL.h : BROWSER.h}
-          rx={rx + recede * 16}
-          ry={ry}
-          s={ps * (1 - recede * 0.25)}
-          z={recede * -400}
-          opacity={1 - prog(f, 612, 18, E.soft)}
-          preserve
-        >
-          {showBusiness ? (
-            <BusinessPanel f={f} complete />
-          ) : (
-            <Website f={f} tech={tech} svc={svc} links={links} scanY={scanY} scanOn={scanOn} lift={lift} hideServices={f >= LIFT_HANDOFF} />
-          )}
-        </Plane>
+      <Stage perspective={PERSPECTIVE}>
+        {f < SWAP ? (
+          <Obj cx={SITE4.cx} cy={SITE4.cy} w={CARD3.w} h={CARD3.h} pose={gp}>
+            <ProfileCard f={f} pose={gp} done />
+          </Obj>
+        ) : (
+          <Obj cx={SITE4.cx} cy={SITE4.cy} w={SITE4.w} h={SITE4.h} pose={gp}>
+            {/* Layer 1 · technical foundations (the slab with real thickness) */}
+            <Card3D w={SITE4.w} h={SITE4.h} depth={26} radius={34} face={C.paper} edge={EDGE.paper} ry={gp.ry} lift={60 + ex * 120} shadowColor="25,43,42" opacity={fade} glow={flash > 0 ? `0 0 0 ${6 * flash}px rgba(23,97,90,0.5)` : undefined}>
+              <Technical f={f} ex={ex} scan={scan[0]} />
+            </Card3D>
+            {/* Layer 2 · service content */}
+            <div style={{position: 'absolute', inset: 0, transform: `translateZ(${gap + 1}px)`, opacity: fade}}>
+              <Sheet ex={ex} tint="rgba(255,255,255,0.72)">
+                <Content f={f} scan={scan[1]} hideBlock={f >= LIFT} />
+              </Sheet>
+            </div>
+            {/* Layer 3 · internal connections */}
+            <div style={{position: 'absolute', inset: 0, transform: `translateZ(${2 * gap + 2}px)`, opacity: fade}}>
+              <Sheet ex={ex} tint="rgba(183,216,197,0.22)">
+                <Connections f={f} scan={scan[2]} />
+              </Sheet>
+            </div>
+          </Obj>
+        )}
       </Stage>
 
-      {/* Headlines */}
-      <div style={{position: 'absolute', left: 90, right: 90, top: 262, textAlign: 'center', opacity: 1 - close * 0.92, filter: close > 0.01 ? `blur(${close * 6}px)` : undefined}}>
-        <RevealLine frame={f} at={438} outAt={600}>
-          <div style={headline(88, C.charcoal)}>{COPY.s4.headline[0]}</div>
-        </RevealLine>
-        <RevealLine frame={f} at={528} outAt={603}>
-          <div style={headline(88, C.teal)}>{COPY.s4.headline[1]}</div>
-        </RevealLine>
+      {/* The lifted block (until Scene 5 takes it) */}
+      {f >= LIFT && f < LIFT_HANDOFF && <LiftedBlock f={f} />}
+
+      {/* Layer labels in the exploded view */}
+      {COPY.s4.layers.map((l, i) => {
+        const p = prog(f, EXPLODE + 6 + i * 4, 8, E.back) * (1 - prog(f, REASSEMBLE - 6, 5, E.in));
+        if (p <= 0) return null;
+        const pos = LABELS[i];
+        return (
+          <div key={l} style={{position: 'absolute', left: pos.x, top: pos.y, transform: `translateX(${(1 - p) * (pos.side === 'r' ? 60 : -60)}px)`, opacity: Math.min(1, p * 2), display: 'flex', alignItems: 'center', gap: 12, flexDirection: pos.side === 'r' ? 'row' : 'row-reverse'}}>
+            <div style={{width: 14, height: 14, borderRadius: '50%', background: C.teal, boxShadow: '0 0 0 6px rgba(23,97,90,0.18)'}} />
+            <div style={{fontFamily: FONT_TEXT, fontWeight: 700, fontSize: 40, letterSpacing: '-0.015em', color: C.charcoal, padding: '12px 22px', borderRadius: 999, background: C.paper, border: `2px solid ${scan[i] > 0.5 ? C.teal : C.creamLine}`, boxShadow: '10px 20px 40px -18px rgba(25,43,42,0.45)', whiteSpace: 'nowrap', display: 'flex', alignItems: 'center', gap: 12}}>
+              {scan[i] > 0.5 && <Icon name="check" size={30} color={C.teal} stroke={3} />}
+              {l}
+            </div>
+          </div>
+        );
+      })}
+
+      {/* Headline */}
+      <div style={{position: 'absolute', left: 40, right: 40, top: 240, height: 110, display: 'flex', justifyContent: 'center'}}>
+        <div style={{position: 'absolute'}}>
+          <KLine f={f} at={SWAP + 4} out={REASSEMBLE - 3}>
+            <H size={86} color={C.charcoal}>
+              Stronger <span style={{color: C.teal}}>foundations.</span>
+            </H>
+          </KLine>
+        </div>
+        <div style={{position: 'absolute'}}>
+          <KLine f={f} at={REASSEMBLE} out={LIFT + 10}>
+            <H size={86} color={C.charcoal}>
+              Clearer <span style={{color: C.teal}}>services.</span>
+            </H>
+          </KLine>
+        </div>
       </div>
     </AbsoluteFill>
   );
 };
 
-const Website: React.FC<{
-  f: number;
-  tech: number;
-  svc: number;
-  links: number;
-  scanY: number;
-  scanOn: number;
-  lift: number;
-  hideServices: boolean;
-}> = ({f, tech, svc, links, scanY, scanOn, lift, hideServices}) => {
+// Screen positions of the exploded-view labels (alternating sides of the stack).
+const LABELS = [
+  {x: 90, y: 1392, side: 'r'},
+  {x: 470, y: 1180, side: 'r'},
+  {x: 90, y: 560, side: 'r'},
+] as const;
+
+const Sheet: React.FC<{ex: number; tint: string; children: React.ReactNode}> = ({ex, tint, children}) => (
+  <div
+    style={{
+      position: 'absolute',
+      inset: 0,
+      borderRadius: 34,
+      background: ex > 0.01 ? tint : 'transparent',
+      border: `2px solid rgba(23,97,90,${0.45 * ex})`,
+      boxShadow: ex > 0.01 ? `0 30px 60px -30px rgba(25,43,42,${0.4 * ex})` : undefined,
+    }}
+  >
+    {children}
+  </div>
+);
+
+const Technical: React.FC<{f: number; ex: number; scan: number}> = ({ex, scan}) => {
+  const boxes = [
+    [24, 76, 712, 60],
+    [24, 150, 712, 270],
+    [24, 440, 712, 120],
+    [24, 580, 712, 120],
+    [24, 720, 712, 120],
+    [24, 856, 712, 30],
+  ];
   return (
-    <div
-      style={{
-        width: '100%',
-        height: '100%',
-        borderRadius: 30,
-        background: C.paper,
-        boxShadow: shadow.creamPanel,
-        border: `1.5px solid ${C.creamLine}`,
-        position: 'relative',
-        overflow: 'hidden',
-      }}
-    >
-      {/* Browser chrome */}
+    <>
       <div style={{height: 64, background: C.creamDeep, display: 'flex', alignItems: 'center', padding: '0 26px', gap: 10, borderBottom: `1.5px solid ${C.creamLine}`}}>
         {[C.accent, C.mint, 'rgba(97,113,106,0.4)'].map((c) => (
           <div key={c} style={{width: 15, height: 15, borderRadius: '50%', background: c}} />
         ))}
         <div style={{flex: 1, display: 'flex', justifyContent: 'center'}}>
-          <div style={{...body(24, C.muted, 500), height: 40, width: 400, borderRadius: 20, background: C.paper, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10}}>
+          <div style={{fontFamily: FONT_TEXT, fontWeight: 500, fontSize: 24, color: C.muted, height: 40, padding: '0 22px', borderRadius: 20, background: C.paper, display: 'flex', alignItems: 'center', gap: 10}}>
             <Icon name="globe" size={22} color={C.teal} />
             {COPY.s4.url}
           </div>
         </div>
-        <div style={{width: 60}} />
       </div>
-
-      {/* Nav */}
-      <div style={{height: 76, display: 'flex', alignItems: 'center', padding: '0 40px', gap: 30}}>
-        <div style={{display: 'flex', alignItems: 'center', gap: 12, flex: 1}}>
-          <div style={{width: 36, height: 36, borderRadius: 10, background: C.teal}} />
-          <Bar w={120} h={14} color="rgba(25,43,42,0.75)" />
-        </div>
-        {COPY.s4.nav.map((n, i) => (
-          <div key={n} style={{...body(24, C.muted, 500), position: 'relative'}}>
-            {n}
-            {i === 1 && (
-              <div
-                style={{
-                  position: 'absolute',
-                  right: -16,
-                  top: -6,
-                  width: 14,
-                  height: 14,
-                  borderRadius: '50%',
-                  background: mix(tech, C.accent, C.teal),
-                }}
-              />
-            )}
-          </div>
-        ))}
-      </div>
-
-      {/* Hero */}
-      <div style={{position: 'absolute', left: 40, top: 160, width: 460}}>
-        <div style={{transform: `translate(${(1 - tech) * 16}px, ${(1 - tech) * 6}px) rotate(${(1 - tech) * -1.6}deg)`}}>
-          <div style={{...headline(54, C.charcoal), lineHeight: 1.08}}>
-            {COPY.s4.heroTitle[0]}
-            <br />
-            {COPY.s4.heroTitle[1]}
-          </div>
-        </div>
-        <div style={{display: 'flex', flexDirection: 'column', gap: 12, marginTop: 22}}>
-          <Bar w={380} h={13} />
-          <Bar w={300} h={13} />
-        </div>
+      {boxes.map(([x, y, w, h], i) => (
         <div
+          key={i}
           style={{
-            ...body(26, mix(links, C.muted, C.cream), 600),
-            marginTop: 26,
-            height: 58,
-            width: 220,
-            borderRadius: 29,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 10,
-            background: mix(links, 'rgba(25,43,42,0.08)', C.teal),
+            position: 'absolute',
+            left: x + (1 - scan) * [0, 12, -16, 20, -10, 0][i],
+            top: y,
+            width: w,
+            height: h,
+            borderRadius: 14,
+            border: `2.5px dashed ${mix(scan, 'rgba(222,137,87,0.65)', 'rgba(23,97,90,0.55)')}`,
+            opacity: 0.25 + 0.75 * ex,
           }}
-        >
-          {COPY.s4.cta}
-          <Icon name="arrow" size={24} color={mix(links, C.muted, C.cream)} />
-        </div>
-      </div>
-      <div
-        style={{
-          position: 'absolute',
-          left: 530,
-          top: 160,
-          width: 270,
-          height: 250,
-          borderRadius: 24,
-          background: 'linear-gradient(160deg, rgba(183,216,197,0.75), rgba(183,216,197,0.35))',
-          display: 'grid',
-          placeItems: 'center',
-          transform: `translateY(${(1 - tech) * -10}px)`,
-        }}
-      >
-        <Icon name="tools" size={96} color={C.teal} stroke={1.4} />
-      </div>
-
-      {/* Technical tags: scattered issues snap into an orderly, checked structure */}
-      {['title', 'H1', 'meta', 'schema'].map((t, i) => {
-        const sx = [560, 420, 690, 300][i];
-        const sy = [120, 250, 330, 120][i];
-        const tx = 40 + i * 112;
-        const tyy = 426;
-        const p = prog(f, 476 + i * 3, 18, E.out);
-        const show = tw(f, 452, 10, 0, 1);
+        />
+      ))}
+      {['<title>', '<h1>', 'meta', 'sitemap'].map((t, i) => {
+        const p = prog(scan, 0.15 * i, 0.4);
         return (
           <div
             key={t}
             style={{
               position: 'absolute',
-              left: lerp(sx, tx, p),
-              top: lerp(sy, tyy, p),
-              transform: `rotate(${(1 - p) * (rand(i + 1) * 16 - 8)}deg)`,
-              ...body(20, mix(p, C.accent, C.teal), 700),
-              fontFamily: 'ui-monospace, "DejaVu Sans Mono", monospace',
-              padding: '5px 10px',
-              borderRadius: 10,
-              background: mix(p, 'rgba(222,137,87,0.14)', 'rgba(183,216,197,0.5)'),
-              border: `1.5px solid ${mix(p, 'rgba(222,137,87,0.5)', 'rgba(23,97,90,0.35)')}`,
-              opacity: show * (tech > 0 || f > 452 ? 1 : 0),
+              left: 470 + (i % 2) * 130,
+              top: 190 + Math.floor(i / 2) * 64,
               display: 'flex',
               alignItems: 'center',
               gap: 6,
+              fontFamily: '"DejaVu Sans Mono", ui-monospace, monospace',
+              fontWeight: 700,
+              fontSize: 22,
+              padding: '6px 12px',
+              borderRadius: 10,
+              color: mix(p, C.accent, C.teal),
+              background: mix(p, 'rgba(222,137,87,0.12)', 'rgba(183,216,197,0.55)'),
+              opacity: 0.3 + 0.7 * ex,
             }}
           >
-            <span style={{display: 'inline-grid', width: 18 * p, overflow: 'hidden', opacity: p}}>
-              <Icon name="check" size={18} color={C.teal} stroke={3} />
+            <span style={{display: 'inline-grid', width: 20 * p, overflow: 'hidden'}}>
+              <Icon name="check" size={20} color={C.teal} stroke={3} />
             </span>
-            {`<${t}>`}
+            {t}
           </div>
         );
       })}
-
-      {/* Services */}
-      <div style={{position: 'absolute', left: 20, top: 450, width: 800, height: 270, opacity: hideServices ? 0 : 1}}>
-        <ServicesBlock svc={svc} lift={lift} />
-      </div>
-
-      {/* Internal links */}
-      <svg width={840} height={960} style={{position: 'absolute', left: 0, top: 0, overflow: 'visible'}}>
-        {[160, 420, 680].map((x, i) => {
-          const p = prog(f, 576 + i * 4, 18, E.inOut);
-          return (
-            <path
-              key={x}
-              d={`M ${x} 712 C ${x} 770, 420 760, 420 810`}
-              fill="none"
-              stroke={C.teal}
-              strokeWidth={4}
-              strokeLinecap="round"
-              pathLength={1}
-              strokeDasharray={`${p} 1`}
-              opacity={0.85}
-            />
-          );
-        })}
-        {(() => {
-          const p = prog(f, 584, 18, E.inOut);
-          return (
-            <path d="M 150 430 C 70 480, 60 600, 60 640" fill="none" stroke={C.teal} strokeWidth={4} strokeLinecap="round" pathLength={1} strokeDasharray={`${p} 1`} opacity={0.6} />
-          );
-        })()}
-      </svg>
-      {[160, 420, 680].map((x, i) => {
-        const p = prog(f, 586 + i * 3, 12, E.back);
-        return (
-          <div
-            key={x}
-            style={{
-              position: 'absolute',
-              left: (x + 420) / 2 - 20,
-              top: 742,
-              width: 40,
-              height: 40,
-              borderRadius: '50%',
-              background: C.paper,
-              border: `2px solid ${C.teal}`,
-              display: 'grid',
-              placeItems: 'center',
-              transform: `scale(${p})`,
-            }}
-          >
-            <Icon name="link" size={22} color={C.teal} stroke={2.2} />
-          </div>
-        );
-      })}
-
-      {/* Contact block */}
-      <div
-        style={{
-          position: 'absolute',
-          left: 40,
-          right: 40,
-          top: 812,
-          height: 112,
-          borderRadius: 24,
-          background: mix(links, C.creamDeep, 'rgba(183,216,197,0.4)'),
-          display: 'flex',
-          alignItems: 'center',
-          padding: '0 30px',
-          justifyContent: 'space-between',
-        }}
-      >
-        <div style={body(32, C.charcoal, 700)}>Ready to talk?</div>
-        <div
-          style={{
-            ...body(26, C.cream, 600),
-            height: 60,
-            padding: '0 28px',
-            borderRadius: 30,
-            background: mix(links, 'rgba(97,113,106,0.55)', C.teal),
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-          }}
-        >
-          <Icon name="phone" size={24} color={C.cream} />
-          {COPY.s4.cta}
-        </div>
-      </div>
-
-      {/* Scan band */}
-      {scanOn > 0 && (
-        <div style={{position: 'absolute', left: 0, right: 0, top: scanY - 90, height: 180, opacity: scanOn, pointerEvents: 'none'}}>
-          <div style={{position: 'absolute', inset: 0, background: 'linear-gradient(to bottom, rgba(23,97,90,0) 0%, rgba(23,97,90,0.10) 45%, rgba(183,216,197,0.35) 50%, rgba(23,97,90,0.10) 55%, rgba(23,97,90,0) 100%)'}} />
-          <div style={{position: 'absolute', left: 0, right: 0, top: 89, height: 3, background: C.teal, boxShadow: '0 0 16px 4px rgba(23,97,90,0.45)'}} />
-        </div>
-      )}
-
-      {/* Brackets + callouts (float above the page) */}
-      {STOPS.map((s, i) => {
-        const on = prog(f, s.at, 10, E.out) * (1 - prog(f, (STOPS[i + 1]?.at ?? 594) - 2, 8, E.soft));
-        return <Brackets key={i} x={s.box.x} y={s.box.y} w={s.box.w} h={s.box.h} opacity={on} />;
-      })}
-      {COPY.s4.callouts.map((c, i) => {
-        const at = CALLOUT_AT[i];
-        const pin = prog(f, at, 14, E.back);
-        const fold = prog(f, at + 34, 12, E.inOut);
-        const box = STOPS[i].box;
-        return (
-          <div
-            key={c}
-            style={{
-              position: 'absolute',
-              left: box.x + box.w / 2,
-              top: box.y - 34,
-              transform: `translate(-50%, 0) translateZ(60px) scale(${(0.7 + 0.3 * pin) * (1 - fold * 0.35)})`,
-              opacity: pin * (1 - fold),
-              ...body(44, C.charcoal, 600),
-              display: 'flex',
-              alignItems: 'center',
-              gap: 16,
-              padding: '14px 30px 14px 16px',
-              borderRadius: 999,
-              background: C.paper,
-              border: `2px solid ${C.teal}`,
-              boxShadow: '12px 24px 40px -16px rgba(25,43,42,0.35)',
-              whiteSpace: 'nowrap',
-            }}
-          >
-            <div style={{width: 56, height: 56, borderRadius: '50%', background: C.teal, display: 'grid', placeItems: 'center'}}>
-              <Icon name={CALLOUT_ICON[i]} size={32} color={C.cream} stroke={2.1} />
-            </div>
-            {c}
-          </div>
-        );
-      })}
-      {/* Folded callouts leave a small check badge on the improved area */}
-      {STOPS.map((s, i) => {
-        const p = prog(f, CALLOUT_AT[i] + 40, 10, E.back);
-        if (p <= 0) return null;
-        return (
-          <div
-            key={i}
-            style={{
-              position: 'absolute',
-              left: s.box.x + s.box.w - 22,
-              top: s.box.y - 14,
-              width: 44,
-              height: 44,
-              borderRadius: '50%',
-              background: C.teal,
-              display: 'grid',
-              placeItems: 'center',
-              transform: `scale(${p})`,
-              boxShadow: '0 6px 14px rgba(23,97,90,0.35)',
-            }}
-          >
-            <Icon name="check" size={26} color={C.cream} stroke={3} />
-          </div>
-        );
-      })}
-    </div>
+    </>
   );
 };
 
-const SERVICE_ICONS: IconName[] = ['tools', 'gear', 'loop'];
+const Content: React.FC<{f: number; scan: number; hideBlock: boolean}> = ({scan, hideBlock}) => (
+  <>
+    <div style={{position: 'absolute', left: 40, top: 86, display: 'flex', alignItems: 'center', gap: 12}}>
+      <div style={{width: 36, height: 36, borderRadius: 10, background: C.teal}} />
+      <div style={{width: 120, height: 14, borderRadius: 7, background: 'rgba(25,43,42,0.75)'}} />
+    </div>
+    <div style={{position: 'absolute', right: 40, top: 92, display: 'flex', gap: 26, fontFamily: FONT_TEXT, fontWeight: 600, fontSize: 22, color: C.muted}}>
+      <span>Services</span>
+      <span>About</span>
+      <span>Contact</span>
+    </div>
+    <div style={{position: 'absolute', left: 40, top: 168, filter: scan < 0.98 ? `blur(${(1 - scan) * 5}px)` : undefined, transform: `translateX(${(1 - scan) * 18}px)`}}>
+      <H size={56} color={mix(scan, 'rgba(25,43,42,0.45)', C.charcoal)} style={{lineHeight: 1.06}}>
+        {COPY.s4.h1[0]}
+        <br />
+        {COPY.s4.h1[1]}
+      </H>
+    </div>
+    <div style={{position: 'absolute', left: 40, top: 300, display: 'flex', flexDirection: 'column', gap: 12}}>
+      <div style={{width: 360, height: 13, borderRadius: 7, background: 'rgba(25,43,42,0.12)'}} />
+      <div style={{width: 280, height: 13, borderRadius: 7, background: 'rgba(25,43,42,0.12)'}} />
+    </div>
+    <div style={{position: 'absolute', left: 40, top: 352, height: 56, padding: '0 26px', borderRadius: 28, background: C.teal, display: 'flex', alignItems: 'center', gap: 10, fontFamily: FONT_TEXT, fontWeight: 600, fontSize: 26, color: C.cream}}>
+      {COPY.s4.cta}
+      <Icon name="arrow" size={24} color={C.cream} />
+    </div>
+    <div style={{position: 'absolute', left: 470, top: 160, width: 250, height: 230, borderRadius: 22, background: 'linear-gradient(160deg, rgba(183,216,197,0.85), rgba(183,216,197,0.4))', display: 'grid', placeItems: 'center'}}>
+      <Icon name="tools" size={92} color={C.teal} stroke={1.5} />
+    </div>
+    {COPY.s4.sections.map((t, i) => {
+      if (i === 0 && hideBlock) return null;
+      const off = (1 - scan) * [-26, 30, -18][i];
+      return (
+        <div key={t} style={{position: 'absolute', left: SITE4_BLOCK.x + off, top: SITE4_BLOCK.y + i * 140, width: SITE4_BLOCK.w, height: SITE4_BLOCK.h}}>
+          <SectionBlock title={t} icon={(['list', 'pin', 'phone'] as IconName[])[i]} clear={scan} />
+        </div>
+      );
+    })}
+  </>
+);
 
-/** The website's services section. Also used as the lifted block that travels into S5. */
-export const ServicesBlock: React.FC<{svc: number; lift?: number}> = ({svc, lift = 0}) => (
+/** One service-page section (also the face of the block that lifts out). */
+export const SectionBlock: React.FC<{title: string; icon: IconName; clear?: number; highlight?: number}> = ({title, icon, clear = 1, highlight = 0}) => (
   <div
     style={{
-      width: '100%',
-      height: '100%',
-      borderRadius: 26,
-      padding: '18px 20px',
-      background: lift > 0 ? `rgba(255,255,255,${lift})` : 'transparent',
-      boxShadow: lift > 0 ? `0 0 0 ${3 * lift}px ${C.teal}, 20px 40px 70px -20px rgba(25,43,42,${0.4 * lift})` : undefined,
-      transform: `scale(${1 + lift * 0.03})`,
+      position: 'absolute',
+      inset: 0,
+      borderRadius: 22,
+      background: C.cream,
+      border: `2px solid ${mix(highlight, mix(clear, C.creamLine, 'rgba(23,97,90,0.22)'), C.teal)}`,
+      display: 'flex',
+      alignItems: 'center',
+      gap: 22,
+      padding: '0 26px',
     }}
   >
-    <div style={{...body(22, C.muted, 700), textTransform: 'uppercase', letterSpacing: '0.1em', marginBottom: 14}}>Services</div>
-    <div style={{display: 'flex', gap: 20}}>
-      {COPY.s4.services.map((s, i) => {
-        const messy = 1 - svc;
-        return (
-          <div
-            key={s}
-            style={{
-              width: 240,
-              height: 196,
-              borderRadius: 22,
-              background: mix(svc, C.creamDeep, C.cream),
-              border: `1.5px solid ${mix(svc, 'rgba(25,43,42,0.10)', 'rgba(23,97,90,0.25)')}`,
-              padding: 20,
-              transform: `translate(${messy * [8, -10, 14][i]}px, ${messy * [14, -8, 22][i]}px) rotate(${messy * [-3, 2.4, -1.8][i]}deg)`,
-              position: 'relative',
-            }}
-          >
-            <div
-              style={{
-                width: 60,
-                height: 60,
-                borderRadius: 18,
-                background: mix(svc, 'rgba(25,43,42,0.1)', C.teal),
-                display: 'grid',
-                placeItems: 'center',
-              }}
-            >
-              <div style={{opacity: svc}}>
-                <Icon name={SERVICE_ICONS[i]} size={34} color={C.cream} stroke={2} />
-              </div>
-            </div>
-            <div style={{position: 'relative', height: 40, marginTop: 18}}>
-              <div style={{position: 'absolute', left: 0, top: 10, opacity: 1 - svc}}>
-                <Bar w={[150, 120, 170][i]} h={16} color="rgba(25,43,42,0.16)" />
-              </div>
-              <div style={{...body(30, C.charcoal, 700), letterSpacing: '-0.02em', opacity: svc, transform: `translateY(${(1 - svc) * 10}px)`, whiteSpace: 'nowrap'}}>{s}</div>
-            </div>
-            <div style={{display: 'flex', flexDirection: 'column', gap: 9, marginTop: 12}}>
-              <Bar w={170} h={10} color="rgba(25,43,42,0.10)" />
-              <Bar w={120} h={10} color="rgba(25,43,42,0.10)" />
-            </div>
-          </div>
-        );
-      })}
+    <div style={{width: 64, height: 64, borderRadius: 18, background: mix(clear, 'rgba(25,43,42,0.12)', C.teal), display: 'grid', placeItems: 'center', flexShrink: 0}}>
+      <Icon name={icon} size={34} color={C.cream} stroke={2} />
+    </div>
+    <div style={{flex: 1}}>
+      <div style={{fontFamily: FONT_TEXT, fontWeight: 700, fontSize: 32, letterSpacing: '-0.015em', color: mix(clear, 'rgba(25,43,42,0.4)', C.charcoal), whiteSpace: 'nowrap'}}>{title}</div>
+      <div style={{display: 'flex', gap: 10, marginTop: 12}}>
+        <div style={{width: 230, height: 12, borderRadius: 6, background: 'rgba(25,43,42,0.12)'}} />
+        <div style={{width: 150, height: 12, borderRadius: 6, background: 'rgba(25,43,42,0.12)'}} />
+      </div>
     </div>
   </div>
 );
+
+const Connections: React.FC<{f: number; scan: number}> = ({scan}) => {
+  const paths = [
+    'M 560 104 C 640 160, 760 300, 700 500', // nav "Services" → What we do
+    'M 155 408 C 120 560, 120 700, 60 780', // CTA → How to reach us
+    'M 40 500 C 0 540, 0 600, 40 640', // What we do → Where we work
+    'M 720 640 C 760 680, 760 740, 720 780', // Where we work → How to reach us
+  ];
+  return (
+    <>
+      <svg width={760} height={900} style={{position: 'absolute', inset: 0, overflow: 'visible'}}>
+        {paths.map((d, i) => (
+          <path key={i} d={d} fill="none" stroke={C.teal} strokeWidth={5} strokeLinecap="round" pathLength={1} strokeDasharray={`${prog(scan, i * 0.12, 0.6)} 1`} />
+        ))}
+      </svg>
+      {[
+        [690, 300],
+        [110, 600],
+        [10, 570],
+        [750, 710],
+      ].map(([x, y], i) => {
+        const p = prog(scan, 0.35 + i * 0.1, 0.4);
+        return (
+          <div key={i} style={{position: 'absolute', left: x - 22, top: y - 22, width: 44, height: 44, borderRadius: '50%', background: C.paper, border: `3px solid ${C.teal}`, display: 'grid', placeItems: 'center', transform: `scale(${p})`}}>
+            <Icon name="link" size={24} color={C.teal} stroke={2.4} />
+          </div>
+        );
+      })}
+    </>
+  );
+};
+
+/** The "What we do" block as a free 3D card (lift → fly → edge-on). */
+export const LiftedBlock: React.FC<{f: number}> = ({f}) => {
+  const b = liftedBlock(f);
+  const hl = prog(f, LIFT - 2, 6, E.out);
+  return (
+    <Stage perspective={PERSPECTIVE}>
+      <Obj cx={b.cx} cy={b.cy} w={b.w} h={b.h} pose={b.pose}>
+        <Card3D w={b.w} h={b.h} depth={18} radius={24} face={C.cream} edge={EDGE.cream} ry={b.pose.ry} lift={70 + b.pose.z * 0.3} shadowColor="25,43,42" glow={`0 0 0 ${3 * hl}px ${C.teal}`}>
+          <div style={{position: 'absolute', left: 0, top: 0, width: SITE4_BLOCK.w, height: SITE4_BLOCK.h}}>
+            <SectionBlock title={COPY.s4.sections[0]} icon="list" highlight={hl} />
+          </div>
+        </Card3D>
+      </Obj>
+    </Stage>
+  );
+};

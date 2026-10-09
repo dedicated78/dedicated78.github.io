@@ -10,16 +10,16 @@ import timeline from '../src/timeline.json';
 loadFonts((file) => file);
 
 const VO: Record<string, string> = {
-  s1: '“Your customers are searching. Let’s help them find you.”',
-  s2: '“Meet GrowwithMH, independent SEO consulting led by Mehedi Hassan.”',
-  s3: '“From Google Maps to local search, I help customers discover your business.”',
-  s4: '“With technical SEO and clearer content, your website can work harder.”',
-  s5: '“I also help prepare your content for answer engines and AI search.”',
-  s6: '“It starts with your business, clear priorities and steady improvements.”',
-  s7: '“Ready to get found? Visit growwithmh dot com. Let’s grow with M H.”',
+  s1: '“Great at what you do, but hard to find online?”',
+  s2: '“Meet GrowwithMH. SEO consulting by Mehedi Hassan.”',
+  s3: '“Help nearby customers discover your business through local SEO and Google Business Profile optimization.”',
+  s4: '“Strengthen your website with technical SEO and clear service content.”',
+  s5: '“Prepare your content for answer engines and AI search.”',
+  s6: '“Work directly with me, from research to action.”',
+  s7: '“Let’s improve your search presence. Visit growwithmh dot com.”',
 };
 const SCENES = Object.entries(timeline.scenes).map(([id, s]) => ({id, ...s}));
-const fmt = (f: number) => `0:${String(Math.floor(f / 30)).padStart(2, '0')}`;
+const fmt = (f: number) => `0:${(f / 30).toFixed(1).padStart(4, '0')}`;
 
 const App: React.FC = () => {
   const ref = useRef<PlayerRef>(null);
@@ -58,7 +58,7 @@ const App: React.FC = () => {
                 type="button"
                 id={`scene-${s.id}`}
                 className={s.id === current.id ? 'on' : ''}
-                onClick={() => ref.current?.seekTo(s.start + (i === 0 ? 0 : 6))}
+                onClick={() => ref.current?.seekTo(s.start + (i === 0 ? 0 : 4))}
               >
                 <span className="t">{fmt(s.start)}</span>
                 <span className="n">{s.name}</span>
@@ -66,7 +66,7 @@ const App: React.FC = () => {
             </li>
           ))}
         </ol>
-        <p className="note">Narration isn’t baked in. The track you hear is the original music bed and sound effects, with room left for your voice.</p>
+        <p className="note">Narration isn’t baked in. The track is an original 150 BPM phonk instrumental (one bar = 1.6 s); every scene starts on a bar line.</p>
       </aside>
     </div>
   );

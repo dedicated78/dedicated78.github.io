@@ -1,0 +1,733 @@
+{
+ "bpm": 150,
+ "fps": 30,
+ "framesPerBeat": 12,
+ "framesPerBar": 48,
+ "bars": 20,
+ "markers": [
+  {
+   "frame": 0,
+   "time": 0,
+   "bar": 1,
+   "beat": 1,
+   "step": 0,
+   "type": "phrase",
+   "note": "Opening"
+  },
+  {
+   "frame": 0,
+   "time": 0,
+   "bar": 1,
+   "beat": 1,
+   "step": 0,
+   "type": "kick"
+  },
+  {
+   "frame": 24,
+   "time": 0.8,
+   "bar": 1,
+   "beat": 3,
+   "step": 8,
+   "type": "kick"
+  },
+  {
+   "frame": 48,
+   "time": 1.6,
+   "bar": 2,
+   "beat": 1,
+   "step": 0,
+   "type": "kick"
+  },
+  {
+   "frame": 72,
+   "time": 2.4,
+   "bar": 2,
+   "beat": 3,
+   "step": 8,
+   "type": "kick"
+  },
+  {
+   "frame": 60,
+   "time": 2,
+   "bar": 2,
+   "beat": 2,
+   "step": 4,
+   "type": "snare"
+  },
+  {
+   "frame": 84,
+   "time": 2.8,
+   "bar": 2,
+   "beat": 4,
+   "step": 12,
+   "type": "snare"
+  },
+  {
+   "frame": 96,
+   "time": 3.2,
+   "bar": 3,
+   "beat": 1,
+   "step": 0,
+   "type": "phrase",
+   "note": "Brand"
+  },
+  {
+   "frame": 96,
+   "time": 3.2,
+   "bar": 3,
+   "beat": 1,
+   "step": 0,
+   "type": "accent",
+   "note": "brand intro impact"
+  },
+  {
+   "frame": 96,
+   "time": 3.2,
+   "bar": 3,
+   "beat": 1,
+   "step": 0,
+   "type": "kick"
+  },
+  {
+   "frame": 120,
+   "time": 4,
+   "bar": 3,
+   "beat": 3,
+   "step": 8,
+   "type": "kick"
+  },
+  {
+   "frame": 108,
+   "time": 3.6,
+   "bar": 3,
+   "beat": 2,
+   "step": 4,
+   "type": "snare"
+  },
+  {
+   "frame": 132,
+   "time": 4.4,
+   "bar": 3,
+   "beat": 4,
+   "step": 12,
+   "type": "snare"
+  },
+  {
+   "frame": 144,
+   "time": 4.8,
+   "bar": 4,
+   "beat": 1,
+   "step": 0,
+   "type": "kick"
+  },
+  {
+   "frame": 168,
+   "time": 5.6,
+   "bar": 4,
+   "beat": 3,
+   "step": 8,
+   "type": "kick"
+  },
+  {
+   "frame": 156,
+   "time": 5.2,
+   "bar": 4,
+   "beat": 2,
+   "step": 4,
+   "type": "snare"
+  },
+  {
+   "frame": 180,
+   "time": 6,
+   "bar": 4,
+   "beat": 4,
+   "step": 12,
+   "type": "snare"
+  },
+  {
+   "frame": 192,
+   "time": 6.4,
+   "bar": 5,
+   "beat": 1,
+   "step": 0,
+   "type": "phrase",
+   "note": "Local discovery"
+  },
+  {
+   "frame": 192,
+   "time": 6.4,
+   "bar": 5,
+   "beat": 1,
+   "step": 0,
+   "type": "kick"
+  },
+  {
+   "frame": 216,
+   "time": 7.2,
+   "bar": 5,
+   "beat": 3,
+   "step": 8,
+   "type": "kick"
+  },
+  {
+   "frame": 204,
+   "time": 6.8,
+   "bar": 5,
+   "beat": 2,
+   "step": 4,
+   "type": "snare"
+  },
+  {
+   "frame": 228,
+   "time": 7.6,
+   "bar": 5,
+   "beat": 4,
+   "step": 12,
+   "type": "snare"
+  },
+  {
+   "frame": 240,
+   "time": 8,
+   "bar": 6,
+   "beat": 1,
+   "step": 0,
+   "type": "kick"
+  },
+  {
+   "frame": 264,
+   "time": 8.8,
+   "bar": 6,
+   "beat": 3,
+   "step": 8,
+   "type": "kick"
+  },
+  {
+   "frame": 252,
+   "time": 8.4,
+   "bar": 6,
+   "beat": 2,
+   "step": 4,
+   "type": "snare"
+  },
+  {
+   "frame": 276,
+   "time": 9.2,
+   "bar": 6,
+   "beat": 4,
+   "step": 12,
+   "type": "snare"
+  },
+  {
+   "frame": 288,
+   "time": 9.6,
+   "bar": 7,
+   "beat": 1,
+   "step": 0,
+   "type": "kick"
+  },
+  {
+   "frame": 312,
+   "time": 10.4,
+   "bar": 7,
+   "beat": 3,
+   "step": 8,
+   "type": "kick"
+  },
+  {
+   "frame": 300,
+   "time": 10,
+   "bar": 7,
+   "beat": 2,
+   "step": 4,
+   "type": "snare"
+  },
+  {
+   "frame": 324,
+   "time": 10.8,
+   "bar": 7,
+   "beat": 4,
+   "step": 12,
+   "type": "snare"
+  },
+  {
+   "frame": 336,
+   "time": 11.2,
+   "bar": 8,
+   "beat": 1,
+   "step": 0,
+   "type": "kick"
+  },
+  {
+   "frame": 360,
+   "time": 12,
+   "bar": 8,
+   "beat": 3,
+   "step": 8,
+   "type": "kick"
+  },
+  {
+   "frame": 348,
+   "time": 11.6,
+   "bar": 8,
+   "beat": 2,
+   "step": 4,
+   "type": "snare"
+  },
+  {
+   "frame": 372,
+   "time": 12.4,
+   "bar": 8,
+   "beat": 4,
+   "step": 12,
+   "type": "snare"
+  },
+  {
+   "frame": 384,
+   "time": 12.8,
+   "bar": 9,
+   "beat": 1,
+   "step": 0,
+   "type": "phrase",
+   "note": "Website clarity"
+  },
+  {
+   "frame": 384,
+   "time": 12.8,
+   "bar": 9,
+   "beat": 1,
+   "step": 0,
+   "type": "kick"
+  },
+  {
+   "frame": 408,
+   "time": 13.6,
+   "bar": 9,
+   "beat": 3,
+   "step": 8,
+   "type": "kick"
+  },
+  {
+   "frame": 396,
+   "time": 13.2,
+   "bar": 9,
+   "beat": 2,
+   "step": 4,
+   "type": "snare"
+  },
+  {
+   "frame": 420,
+   "time": 14,
+   "bar": 9,
+   "beat": 4,
+   "step": 12,
+   "type": "snare"
+  },
+  {
+   "frame": 432,
+   "time": 14.4,
+   "bar": 10,
+   "beat": 1,
+   "step": 0,
+   "type": "kick"
+  },
+  {
+   "frame": 456,
+   "time": 15.2,
+   "bar": 10,
+   "beat": 3,
+   "step": 8,
+   "type": "kick"
+  },
+  {
+   "frame": 444,
+   "time": 14.8,
+   "bar": 10,
+   "beat": 2,
+   "step": 4,
+   "type": "snare"
+  },
+  {
+   "frame": 468,
+   "time": 15.6,
+   "bar": 10,
+   "beat": 4,
+   "step": 12,
+   "type": "snare"
+  },
+  {
+   "frame": 480,
+   "time": 16,
+   "bar": 11,
+   "beat": 1,
+   "step": 0,
+   "type": "kick"
+  },
+  {
+   "frame": 504,
+   "time": 16.8,
+   "bar": 11,
+   "beat": 3,
+   "step": 8,
+   "type": "kick"
+  },
+  {
+   "frame": 492,
+   "time": 16.4,
+   "bar": 11,
+   "beat": 2,
+   "step": 4,
+   "type": "snare"
+  },
+  {
+   "frame": 516,
+   "time": 17.2,
+   "bar": 11,
+   "beat": 4,
+   "step": 12,
+   "type": "snare"
+  },
+  {
+   "frame": 480,
+   "time": 16,
+   "bar": 11,
+   "beat": 1,
+   "step": 0,
+   "type": "accent",
+   "note": "reassemble"
+  },
+  {
+   "frame": 528,
+   "time": 17.6,
+   "bar": 12,
+   "beat": 1,
+   "step": 0,
+   "type": "kick"
+  },
+  {
+   "frame": 552,
+   "time": 18.4,
+   "bar": 12,
+   "beat": 3,
+   "step": 8,
+   "type": "kick"
+  },
+  {
+   "frame": 540,
+   "time": 18,
+   "bar": 12,
+   "beat": 2,
+   "step": 4,
+   "type": "snare"
+  },
+  {
+   "frame": 576,
+   "time": 19.2,
+   "bar": 13,
+   "beat": 1,
+   "step": 0,
+   "type": "phrase",
+   "note": "Answers"
+  },
+  {
+   "frame": 576,
+   "time": 19.2,
+   "bar": 13,
+   "beat": 1,
+   "step": 0,
+   "type": "kick"
+  },
+  {
+   "frame": 600,
+   "time": 20,
+   "bar": 13,
+   "beat": 3,
+   "step": 8,
+   "type": "kick"
+  },
+  {
+   "frame": 588,
+   "time": 19.6,
+   "bar": 13,
+   "beat": 2,
+   "step": 4,
+   "type": "snare"
+  },
+  {
+   "frame": 612,
+   "time": 20.4,
+   "bar": 13,
+   "beat": 4,
+   "step": 12,
+   "type": "snare"
+  },
+  {
+   "frame": 624,
+   "time": 20.8,
+   "bar": 14,
+   "beat": 1,
+   "step": 0,
+   "type": "kick"
+  },
+  {
+   "frame": 648,
+   "time": 21.6,
+   "bar": 14,
+   "beat": 3,
+   "step": 8,
+   "type": "kick"
+  },
+  {
+   "frame": 636,
+   "time": 21.2,
+   "bar": 14,
+   "beat": 2,
+   "step": 4,
+   "type": "snare"
+  },
+  {
+   "frame": 660,
+   "time": 22,
+   "bar": 14,
+   "beat": 4,
+   "step": 12,
+   "type": "snare"
+  },
+  {
+   "frame": 672,
+   "time": 22.4,
+   "bar": 15,
+   "beat": 1,
+   "step": 0,
+   "type": "kick"
+  },
+  {
+   "frame": 696,
+   "time": 23.2,
+   "bar": 15,
+   "beat": 3,
+   "step": 8,
+   "type": "kick"
+  },
+  {
+   "frame": 684,
+   "time": 22.8,
+   "bar": 15,
+   "beat": 2,
+   "step": 4,
+   "type": "snare"
+  },
+  {
+   "frame": 708,
+   "time": 23.6,
+   "bar": 15,
+   "beat": 4,
+   "step": 12,
+   "type": "snare"
+  },
+  {
+   "frame": 720,
+   "time": 24,
+   "bar": 16,
+   "beat": 1,
+   "step": 0,
+   "type": "phrase",
+   "note": "Personal attention"
+  },
+  {
+   "frame": 720,
+   "time": 24,
+   "bar": 16,
+   "beat": 1,
+   "step": 0,
+   "type": "kick"
+  },
+  {
+   "frame": 744,
+   "time": 24.8,
+   "bar": 16,
+   "beat": 3,
+   "step": 8,
+   "type": "kick"
+  },
+  {
+   "frame": 732,
+   "time": 24.4,
+   "bar": 16,
+   "beat": 2,
+   "step": 4,
+   "type": "snare"
+  },
+  {
+   "frame": 756,
+   "time": 25.2,
+   "bar": 16,
+   "beat": 4,
+   "step": 12,
+   "type": "snare"
+  },
+  {
+   "frame": 768,
+   "time": 25.6,
+   "bar": 17,
+   "beat": 1,
+   "step": 0,
+   "type": "kick"
+  },
+  {
+   "frame": 792,
+   "time": 26.4,
+   "bar": 17,
+   "beat": 3,
+   "step": 8,
+   "type": "kick"
+  },
+  {
+   "frame": 780,
+   "time": 26,
+   "bar": 17,
+   "beat": 2,
+   "step": 4,
+   "type": "snare"
+  },
+  {
+   "frame": 804,
+   "time": 26.8,
+   "bar": 17,
+   "beat": 4,
+   "step": 12,
+   "type": "snare"
+  },
+  {
+   "frame": 816,
+   "time": 27.2,
+   "bar": 18,
+   "beat": 1,
+   "step": 0,
+   "type": "kick"
+  },
+  {
+   "frame": 840,
+   "time": 28,
+   "bar": 18,
+   "beat": 3,
+   "step": 8,
+   "type": "kick"
+  },
+  {
+   "frame": 828,
+   "time": 27.6,
+   "bar": 18,
+   "beat": 2,
+   "step": 4,
+   "type": "snare"
+  },
+  {
+   "frame": 852,
+   "time": 28.4,
+   "bar": 18,
+   "beat": 4,
+   "step": 12,
+   "type": "snare"
+  },
+  {
+   "frame": 864,
+   "time": 28.8,
+   "bar": 19,
+   "beat": 1,
+   "step": 0,
+   "type": "phrase",
+   "note": "Finish"
+  },
+  {
+   "frame": 888,
+   "time": 29.6,
+   "bar": 19,
+   "beat": 3,
+   "step": 8,
+   "type": "accent",
+   "note": "brand reveal (strongest hit)"
+  },
+  {
+   "frame": 864,
+   "time": 28.8,
+   "bar": 19,
+   "beat": 1,
+   "step": 0,
+   "type": "accent",
+   "note": "phrase hit: objects compress into the ring"
+  },
+  {
+   "frame": 864,
+   "time": 28.8,
+   "bar": 19,
+   "beat": 1,
+   "step": 0,
+   "type": "kick"
+  },
+  {
+   "frame": 888,
+   "time": 29.6,
+   "bar": 19,
+   "beat": 3,
+   "step": 8,
+   "type": "kick"
+  },
+  {
+   "frame": 876,
+   "time": 29.2,
+   "bar": 19,
+   "beat": 2,
+   "step": 4,
+   "type": "snare"
+  },
+  {
+   "frame": 888,
+   "time": 29.6,
+   "bar": 19,
+   "beat": 3,
+   "step": 8,
+   "type": "snare"
+  },
+  {
+   "frame": 900,
+   "time": 30,
+   "bar": 19,
+   "beat": 4,
+   "step": 12,
+   "type": "snare"
+  },
+  {
+   "frame": 912,
+   "time": 30.4,
+   "bar": 20,
+   "beat": 1,
+   "step": 0,
+   "type": "kick"
+  },
+  {
+   "frame": 936,
+   "time": 31.2,
+   "bar": 20,
+   "beat": 3,
+   "step": 8,
+   "type": "kick"
+  },
+  {
+   "frame": 924,
+   "time": 30.8,
+   "bar": 20,
+   "beat": 2,
+   "step": 4,
+   "type": "snare"
+  },
+  {
+   "frame": 936,
+   "time": 31.2,
+   "bar": 20,
+   "beat": 3,
+   "step": 8,
+   "type": "accent",
+   "note": "final resolve"
+  }
+ ]
+}

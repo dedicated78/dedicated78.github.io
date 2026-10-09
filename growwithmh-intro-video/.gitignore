@@ -2,4 +2,5 @@ node_modules
 out
 player/dist
 # Generated deterministically by `npm run audio`
+public/audio/**/*.wav
 public/audio/*.wav

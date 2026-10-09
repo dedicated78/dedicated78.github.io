@@ -9,8 +9,10 @@ export const Wordmark: React.FC<{
   dark?: boolean;
   dotScale?: number;
   dotOpacity?: number;
+  /** Paint every part one colour (used for the extruded depth copies). */
+  mono?: string;
   style?: React.CSSProperties;
-}> = ({size, dark = false, dotScale = 1, dotOpacity = 1, style}) => (
+}> = ({size, dark = false, dotScale = 1, dotOpacity = 1, mono, style}) => (
   <div
     style={{
       fontFamily: FONT_DISPLAY,
@@ -18,7 +20,7 @@ export const Wordmark: React.FC<{
       fontSize: size,
       letterSpacing: '-0.035em',
       lineHeight: 1,
-      color: dark ? C.cream : C.charcoal,
+      color: mono ?? (dark ? C.cream : C.charcoal),
       whiteSpace: 'nowrap',
       display: 'inline-flex',
       alignItems: 'baseline',
@@ -26,7 +28,7 @@ export const Wordmark: React.FC<{
     }}
   >
     <span>Growwith</span>
-    <span style={{color: dark ? C.mint : C.teal}}>MH</span>
+    <span style={{color: mono ?? (dark ? C.mint : C.teal)}}>MH</span>
     <span
       style={{
         display: 'inline-block',
@@ -34,7 +36,7 @@ export const Wordmark: React.FC<{
         height: size * 0.2,
         marginLeft: size * 0.05,
         borderRadius: '50%',
-        background: C.accent,
+        background: mono ?? C.accent,
         transform: `scale(${dotScale})`,
         opacity: dotOpacity,
       }}

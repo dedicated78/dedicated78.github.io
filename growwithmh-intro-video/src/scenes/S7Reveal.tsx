@@ -1,176 +1,98 @@
 import React from 'react';
-import {AbsoluteFill, interpolateColors} from 'remotion';
+import {AbsoluteFill} from 'remotion';
 import {COPY} from '../content';
-import {C} from '../theme';
-import {E, lerp, prog, tw} from '../lib/anim';
-import {CreamEnv, RevealLine, Wordmark, body, headline} from '../components/Primitives';
+import {C, FONT_DISPLAY, FONT_TEXT} from '../theme';
+import {B} from '../beats';
+import {E, kf, lerp, prog} from '../lib/anim';
+import {DarkEnv} from '../components/Primitives';
 import {Icon} from '../components/Icons';
-import {Lens} from '../components/Lens';
-import {NODE_Y, SPINE_X, S6_EXIT} from './S6Approach';
+import {Stage} from '../components/Stage';
+import {Card3D, EDGE, Obj, enter} from '../components/Card3D';
+import {KLine} from '../components/Faces';
+import {Wordmark3D} from '../components/Wordmark3D';
+import {PERSPECTIVE, S6_CENTER, WM7} from '../layout';
+import {DOT7, ringAt} from '../ring';
 
-// Scene 7 · 34–40s · Brand reveal and invitation
-// The workflow marker becomes a search lens, travels across the line of the wordmark
-// revealing it (with a magnified view inside the lens), then settles into the brand's
-// warm dot. Reveal completes by ~36.5s; the final composition holds to the end.
+// Scene 7 · bars 19–20 · 28.8–32 s · Brand and invitation
+// Hard cut to charcoal on the bar-19 phrase hit. The ring carries the gathered work to
+// the wordmark, sweeps it (revealing the extruded mark as it passes) and collapses into
+// the warm dot on the strongest hit (bar 19 beat 3 = 29.6 s). The invitation and URL
+// follow on 16ths; the music resolves on bar 20 beat 3 with the CTA held to the end.
 
-export const WM = {size: 124, cy: 760};
-// Centre of the wordmark's dot at WM.size (measured from a render of the wordmark).
-export const DOT = {x: 900, y: 791, d: WM.size * 0.2};
-
-const LENS_D = 200;
-const LENS_START = {x: 205, y: WM.cy};
-const TRAVEL = {start: 1034, end: 1066};
-const COLLAPSE = {start: 1066, end: 1078};
+const REVEAL = B(19, 3); // 888
+const RESOLVE = B(20, 3); // 936
+const WM_RIGHT = 925; // right edge of the wordmark incl. dot at size 128
 
 export const S7Reveal: React.FC<{frame: number}> = ({frame: f}) => {
-  // Bridge: marker (node 4) -> ring, along a curve.
-  const b = prog(f, S6_EXIT + 2, 34, E.inOut);
-  const p0 = {x: SPINE_X, y: NODE_Y[3]};
-  const p1 = {x: 90, y: 1060};
-  const p2 = LENS_START;
-  const bx = (1 - b) * (1 - b) * p0.x + 2 * (1 - b) * b * p1.x + b * b * p2.x;
-  const by = (1 - b) * (1 - b) * p0.y + 2 * (1 - b) * b * p1.y + b * b * p2.y;
-
-  const t = prog(f, TRAVEL.start, TRAVEL.end - TRAVEL.start, E.inOut);
-  const c = prog(f, COLLAPSE.start, COLLAPSE.end - COLLAPSE.start, E.inOut);
-  const lx = f < TRAVEL.start ? bx : lerp(LENS_START.x, DOT.x, t);
-  const ly = f < TRAVEL.start ? by : lerp(LENS_START.y, DOT.y, t);
-  const growD = lerp(30, LENS_D, prog(f, S6_EXIT + 4, 30, E.inOut));
-  const d = f < COLLAPSE.start ? growD : lerp(LENS_D, DOT.d, c);
-  const stroke = f < COLLAPSE.start ? lerp(15, 8, prog(f, S6_EXIT + 4, 24, E.inOut)) : lerp(8, DOT.d / 2, c);
-  const handle = prog(f, 1018, 14, E.out) * (1 - prog(f, COLLAPSE.start - 4, 10, E.in));
-  const lensColor = interpolateColors(c, [0, 1], [C.teal, C.accent]);
-  const fillDot = f < S6_EXIT + 10 ? C.teal : undefined;
-  const lensOn = f < COLLAPSE.end;
-
-  const revealX = f < TRAVEL.start ? 0 : f >= COLLAPSE.start ? 1080 : lx;
-  const sweep = prog(f, 1076, 26, E.inOutSoft);
-  const settle = prog(f, COLLAPSE.end - 2, 10, E.back);
+  const ring = ringAt(f);
+  const sweeping = f >= B(19, 1, 2) && f < REVEAL;
+  const clipRight = f < B(19, 1, 2) ? 2000 : sweeping ? Math.max(0, WM_RIGHT - ring.x) : 0;
+  const settle = prog(f, B(19, 1, 2), 26, E.out);
+  const shock = prog(f, B(19), 14, E.out);
+  const hit = kf(f, [REVEAL, REVEAL + 1, REVEAL + 8], [0, 1, 0], E.linear);
+  const sweep = prog(f, REVEAL, 18, E.inOutSoft);
+  const url = enter(f, B(19, 3, 1), {y: 140, z: -360, rx: 50}, {rx: 2}, 10);
+  const resolve = kf(f, [RESOLVE, RESOLVE + 2, RESOLVE + 18], [0, 1, 0], E.soft);
 
   return (
     <AbsoluteFill>
-      <AbsoluteFill style={{opacity: prog(f, S6_EXIT, 20, E.soft)}}>
-        <CreamEnv haloX={540} haloY={WM.cy + 40} halo={tw(f, 1020, 40, 0.4, 1)} lines={0.6} />
-      </AbsoluteFill>
+      <DarkEnv glowX={540} glowY={WM7.cy + 200} glow={1 + hit * 0.5} gridOpacity={0.5} />
 
-      {/* Teal light passing behind the wordmark */}
+      {/* phrase-hit shockwave from the ring */}
+      {shock > 0 && shock < 1 && (
+        <div style={{position: 'absolute', left: S6_CENTER.x - 120 - shock * 700, top: S6_CENTER.y - 120 - shock * 700, width: 240 + shock * 1400, height: 240 + shock * 1400, borderRadius: '50%', border: `${6 * (1 - shock)}px solid ${C.mint}`, opacity: (1 - shock) * 0.7}} />
+      )}
+
+      {/* teal light passing behind the mark after the reveal */}
       {sweep > 0 && sweep < 1 && (
-        <div
-          style={{
-            position: 'absolute',
-            left: lerp(-200, 1080, sweep) - 160,
-            top: WM.cy - 170,
-            width: 320,
-            height: 340,
-            borderRadius: '50%',
-            background: 'radial-gradient(closest-side, rgba(23,97,90,0.28), rgba(183,216,197,0.25) 50%, rgba(183,216,197,0))',
-            filter: 'blur(10px)',
-          }}
+        <div style={{position: 'absolute', left: lerp(-300, 1180, sweep) - 200, top: WM7.cy - 200, width: 400, height: 400, borderRadius: '50%', background: 'radial-gradient(closest-side, rgba(23,97,90,0.75), rgba(23,97,90,0))', filter: 'blur(10px)'}} />
+      )}
+
+      <Stage perspective={PERSPECTIVE}>
+        <Wordmark3D
+          size={WM7.size}
+          cy={WM7.cy}
+          dark
+          depth={22}
+          rx={lerp(30, 0, settle)}
+          ry={lerp(-14, 0, settle)}
+          s={1 + hit * 0.03}
+          ramp={['#2D6D64', '#0F2E2B']}
+          clipRight={clipRight}
+          dotOpacity={f >= REVEAL ? 1 : 0}
+          dotScale={kf(f, [REVEAL, REVEAL + 3, REVEAL + 8], [1, 1.35, 1], E.soft)}
         />
-      )}
 
-      {/* Trail line from the workflow into the reveal */}
-      {f < 1040 && (
-        <svg width={1080} height={1920} style={{position: 'absolute', inset: 0, opacity: 1 - prog(f, 1018, 18, E.soft)}}>
-          <path
-            d={`M ${p0.x} ${p0.y} Q ${p1.x} ${p1.y} ${p2.x} ${p2.y}`}
-            fill="none"
-            stroke={C.teal}
-            strokeWidth={5}
-            strokeLinecap="round"
-            pathLength={1}
-            strokeDasharray={`${b} 1`}
-            opacity={0.5}
-          />
-        </svg>
-      )}
+      </Stage>
+      <Stage perspective={PERSPECTIVE}>
+        {/* URL card */}
+        {f >= B(19, 3, 1) && (
+          <Obj cx={540} cy={1196} w={720} h={136} pose={url}>
+            <Card3D w={720} h={136} depth={18} radius={68} face={C.mint} edge={EDGE.mint} ry={url.ry} lift={50} glow={`0 0 ${40 + resolve * 50}px ${resolve * 10}px rgba(183,216,197,${0.35 + resolve * 0.3})`}>
+              <div style={{position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 22px 0 54px'}}>
+                <span style={{fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: 62, letterSpacing: '-0.03em', color: C.charcoal}}>{COPY.s7.url}</span>
+                <div style={{width: 92, height: 92, borderRadius: '50%', background: C.charcoal, display: 'grid', placeItems: 'center'}}>
+                  <Icon name="arrow" size={46} color={C.mint} stroke={2.6} />
+                </div>
+              </div>
+            </Card3D>
+          </Obj>
+        )}
+      </Stage>
 
-      {/* Wordmark revealed behind the travelling lens */}
-      <AbsoluteFill style={{clipPath: `inset(0 ${1080 - revealX}px 0 0)`}}>
-        <WordmarkRow dotScale={settle} dotOpacity={f >= COLLAPSE.end - 2 ? 1 : 0} />
-      </AbsoluteFill>
-
-      {/* Magnified view inside the lens */}
-      {lensOn && f >= TRAVEL.start - 6 && (
-        <AbsoluteFill style={{clipPath: `circle(${Math.max(0, d / 2 - stroke / 2)}px at ${lx}px ${ly}px)`}}>
-          <AbsoluteFill style={{background: C.cream}} />
-          <AbsoluteFill style={{transformOrigin: `${lx}px ${ly}px`, transform: `scale(${1.16 - c * 0.16})`}}>
-            <AbsoluteFill style={{background: 'radial-gradient(400px 260px at 540px 800px, rgba(183,216,197,0.6), rgba(183,216,197,0))'}} />
-            <WordmarkRow dotScale={0} dotOpacity={0} />
-          </AbsoluteFill>
-        </AbsoluteFill>
-      )}
-
-      {lensOn && f >= S6_EXIT && (
-        <Lens x={lx} y={ly} d={d} stroke={stroke} handle={handle} color={lensColor} fill={fillDot} halo={0.5 * (1 - c)} />
-      )}
-
-      {/* Tagline + CTA */}
-      <div style={{position: 'absolute', left: 90, right: 90, top: 902, textAlign: 'center'}}>
-        <div style={{width: tw(f, 1078, 16, 0, 140), height: 4, borderRadius: 2, background: C.mint, margin: '0 auto 40px'}} />
-        <RevealLine frame={f} at={1080}>
-          <div style={headline(104, C.charcoal)}>{COPY.s7.lines[0]}</div>
-        </RevealLine>
-        <RevealLine frame={f} at={1085} style={{marginTop: 10}}>
-          <div style={headline(66, C.teal)}>{COPY.s7.lines[1]}</div>
-        </RevealLine>
+      {/* Invitation */}
+      <div style={{position: 'absolute', left: 0, right: 0, top: 880, display: 'flex', flexDirection: 'column', alignItems: 'center'}}>
+        <KLine f={f} at={REVEAL}>
+          <div style={{fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: 80, lineHeight: 1.04, letterSpacing: '-0.035em', color: C.cream, whiteSpace: 'nowrap'}}>{COPY.s7.lines[0]}</div>
+        </KLine>
+        <KLine f={f} at={REVEAL + 3}>
+          <div style={{fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: 80, lineHeight: 1.04, letterSpacing: '-0.035em', color: C.mint, whiteSpace: 'nowrap'}}>{COPY.s7.lines[1]}</div>
+        </KLine>
       </div>
-      <UrlPill f={f} />
-      <div
-        style={{
-          position: 'absolute',
-          left: 90,
-          right: 90,
-          top: 1392,
-          textAlign: 'center',
-          ...body(34, C.muted, 500),
-          opacity: prog(f, 1094, 16, E.soft),
-        }}
-      >
-        Independent SEO consulting · Mehedi Hassan
-      </div>
+      <div style={{position: 'absolute', left: 0, right: 0, top: 1316, textAlign: 'center', fontFamily: FONT_TEXT, fontWeight: 600, fontSize: 36, color: C.mintText, opacity: prog(f, B(19, 4), 8, E.soft)}}>{COPY.s7.credit}</div>
+
+      {/* collapse spark exactly where the dot lands */}
+      {hit > 0 && <div style={{position: 'absolute', left: DOT7.x - 60, top: DOT7.y - 60, width: 120, height: 120, borderRadius: '50%', background: 'radial-gradient(closest-side, rgba(222,137,87,0.65), rgba(222,137,87,0))', opacity: hit}} />}
     </AbsoluteFill>
-  );
-};
-
-const WordmarkRow: React.FC<{dotScale: number; dotOpacity: number}> = ({dotScale, dotOpacity}) => (
-  <div style={{position: 'absolute', left: 0, right: 0, top: WM.cy - WM.size / 2, height: WM.size, display: 'flex', justifyContent: 'center'}}>
-    <Wordmark size={WM.size} dotScale={dotScale} dotOpacity={dotOpacity} />
-  </div>
-);
-
-const UrlPill: React.FC<{f: number}> = ({f}) => {
-  const p = prog(f, 1084, 16, E.out);
-  return (
-    <div
-      style={{
-        position: 'absolute',
-        left: 0,
-        right: 0,
-        top: 1196,
-        display: 'flex',
-        justifyContent: 'center',
-        opacity: p,
-        transform: `translateY(${(1 - p) * 40}px) scale(${0.94 + 0.06 * p})`,
-      }}
-    >
-      <div
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 26,
-          height: 128,
-          padding: '0 22px 0 48px',
-          borderRadius: 64,
-          background: C.charcoal,
-          boxShadow: '16px 30px 60px -24px rgba(25,43,42,0.55), 0 0 0 1px rgba(255,255,255,0.4) inset',
-        }}
-      >
-        <span style={{...body(58, C.cream, 600), letterSpacing: '-0.02em'}}>{COPY.s7.url}</span>
-        <div style={{width: 88, height: 88, borderRadius: '50%', background: C.mint, display: 'grid', placeItems: 'center'}}>
-          <Icon name="arrow" size={44} color={C.charcoal} stroke={2.4} />
-        </div>
-      </div>
-    </div>
   );
 };
