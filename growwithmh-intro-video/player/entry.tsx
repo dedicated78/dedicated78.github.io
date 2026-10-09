@@ -38,7 +38,7 @@ const App: React.FC = () => {
         <Player
           ref={ref}
           component={Film}
-          inputProps={{musicSrc: 'audio/music.m4a', sfxSrc: 'audio/sfx.m4a', musicVolume: 1, sfxVolume: 1}}
+          inputProps={{musicSrc: 'audio/music.mp3', sfxSrc: 'audio/sfx.mp3', musicVolume: 1, sfxVolume: 1}}
           durationInFrames={timeline.durationInFrames}
           fps={timeline.fps}
           compositionWidth={1080}

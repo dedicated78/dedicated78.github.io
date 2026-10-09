@@ -22,7 +22,7 @@ await build({
 
 for (const f of fs.readdirSync('public/fonts')) if (f.endsWith('.otf')) fs.copyFileSync(`public/fonts/${f}`, `${out}/fonts/${f}`);
 for (const n of ['music', 'sfx']) {
-  execFileSync('ffmpeg', ['-v', 'error', '-y', '-i', `public/audio/${n}.wav`, '-c:a', 'aac', '-b:a', '128k', `${out}/audio/${n}.m4a`]);
+  execFileSync('ffmpeg', ['-v', 'error', '-y', '-i', `public/audio/${n}.wav`, '-c:a', 'libmp3lame', '-b:a', '160k', `${out}/audio/${n}.mp3`]);
 }
 fs.copyFileSync('player/index.html', `${out}/index.html`);
 console.log('Built', out);
