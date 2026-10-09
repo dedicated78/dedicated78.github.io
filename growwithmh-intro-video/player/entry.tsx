@@ -66,7 +66,7 @@ const App: React.FC = () => {
             </li>
           ))}
         </ol>
-        <p className="note">Narration isn’t baked in. The track is an original 150 BPM phonk instrumental (one bar = 1.6 s); every scene starts on a bar line.</p>
+        <p className="note">Narration isn’t baked in. Music: the supplied track, tempo-matched to the 150 BPM edit (pitch unchanged); the drop lands on the brand at 0:03.2 and the song’s own ending closes the film.</p>
       </aside>
     </div>
   );

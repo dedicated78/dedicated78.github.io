@@ -1,6 +1,6 @@
-# GrowwithMH: company introduction film (v2, phonk cut)
+# GrowwithMH: company introduction film (v2, music-synced cut)
 
-This is a 32-second, 9:16 brand film for GrowwithMH, the independent SEO consultancy led by Mehedi Hassan. It's built in [Remotion](https://www.remotion.dev/) and cut to an original 150 BPM instrumental phonk track. Every animation is a pure function of the frame number, so preview, seeking and export always match.
+This is a 32-second, 9:16 brand film for GrowwithMH, the independent SEO consultancy led by Mehedi Hassan. It's built in [Remotion](https://www.remotion.dev/) and cut on a 150 BPM grid; the supplied music track is tempo-matched to that grid. Every animation is a pure function of the frame number, so preview, seeking and export always match.
 
 | Spec | Value |
 |---|---|
@@ -25,7 +25,7 @@ npm run studio     # editable preview (regenerates audio first)
 npm run render     # single-pass export -> out/growwithmh-intro.mp4
 bash scripts/render-chunked.sh   # same output in 300-frame chunks (use on slow/headless machines)
 npm run player     # standalone browser preview -> player/dist
-npm run audio      # rebuild music, stems, SFX and src/beats.json
+npm run audio      # rebuild public/audio/music.wav + src/beats.json from the supplied track
 ```
 
 On headless Linux, add `--browser-executable=<chrome-headless-shell>` if Remotion can't download its own browser.
@@ -45,27 +45,22 @@ On headless Linux, add `--browser-executable=<chrome-headless-shell>` if Remotio
 Delivery notes:
 - **Scene 3 line:** the longest one (about 5.5 s at a brisk pace). Start it right on 0:06.4.
 - **Final line:** tight for 3.2 s. Start it about 0.2 s early (0:28.6), or drop "Visit".
-- **Levels:** record the VO around −16 LUFS and duck the music about 6 dB underneath it. Use `public/audio/stems/` if you want to pull the cowbell down instead.
+- **Levels:** record the VO around −16 LUFS and duck the music about 6 dB underneath it.
 
 ## Music
 
-`scripts/generate-audio.mjs` synthesizes the whole track: punchy kick, layered clap, closed and open hats with rolls, a gliding 808 bass in C♯ minor, and a pitched 808-style cowbell melody. It uses no samples, no vocals and no third-party audio, so it's free to use. The structure follows the story:
+The soundtrack is the client-supplied track (`public/audio/source/music-source.mp3`, 2:46, 121.92 BPM). It isn't committed, so third-party audio isn't published with the site repo. To rebuild, place the file there and run `npm run audio`. `scripts/prepare-music.mjs` fits it to the film without changing any animation:
 
-| Bars | Section | What changes |
-|---|---|---|
-| 1–2 | Opening | Cowbell motif and kick from frame 0. Full drums on bar 2, with a riser and snare fill into bar 3 |
-| 3–4 | Brand | Impact on the bar-3 downbeat |
-| 5–8 | Main A | Full groove with open hats. Bar 8 has a turnaround melody and an 808 glide |
-| 9–12 | Main B | Higher cowbell variation. Accent on bar 11. Drums cut on bar 12 beat 4 (break) |
-| 13–15 | Answers | Triplet hats, sparser cowbell, fill at the end of bar 15 |
-| 16–18 | Personal | Main motif returns. Bar 18 is a snare-roll build with a riser |
-| 19–20 | Finish | Phrase hit (bar 19), strongest hit at 29.6 s, resolve on the tonic at 31.2 s |
+- **Tempo:** time-stretched ×1.2303 to 150 BPM with rubberband, pitch preserved, so every beat lands on the film's 12-frame grid. Measured on the output, 79 of 80 beat transients sit within 20 ms of the grid, with a median of +4.8 ms (less than a frame).
+- **0 – 30.4 s:** source 35.51 – 72.91 s. It opens on the last two bars of the source's breakdown. The drop (source bar 20) hits the brand impact at 3.2 s. The source's next 8-bar phrase starts land on the layer slam (16.0 s) and the phrase hit before the reveal (28.8 s). The source's fill bar plays under the compression into the ring (27.2 – 28.8 s).
+- **30.4 – 32.0 s:** the song's own final bar (source 163.46 s), spliced on the bar line, so the CTA holds over a real ending.
+- **Level:** music at about −15.7 LUFS, then mixed with the SFX through a limiter. The final MP4 measures −16.2 LUFS with a −1.5 dBTP true peak.
 
-Mix: the music is about −15 LUFS integrated with peaks at −1.2 dBFS. There's a 3 dB dip at 2.8 kHz on drums and cowbell to leave room for a voice. Stems are in `public/audio/stems/` (drums, bass, cowbell); they sum to the mix. SFX are sparse (clicks, short swishes, two soft taps) and sit around −33 LUFS under the music.
+The SFX are unchanged. `public/audio/sfx.wav` is the frozen file from the previous cut (cue list in `src/timeline.json`): clicks, short swishes and two soft taps, about −33 LUFS under the music.
 
 ### Beat markers
 
-The generator also writes `src/beats.json`: every kick, snare, accent and phrase, with frame, time, bar and beat. If you replace the music, keep a 150 BPM track and align its downbeat to frame 0, and the cut stays in sync. Key markers:
+`src/beats.json` lists every beat of the fitted music on the film grid (kick on beats 1 + 3, snare/clap on 2 + 4, as in the source), plus the musical landmarks and the source mapping. Key sync points:
 
 | Frame | Time | Bar.beat | Marker | Visual |
 |---|---|---|---|---|
@@ -73,9 +68,9 @@ The generator also writes `src/beats.json`: every kick, snare, accent and phrase
 | 24 | 0.8 | 1.3 | kick | quality checks fill on 16ths |
 | 48 | 1.6 | 2.1 | kick | cut to "Hard to find?", search card arrives, details scatter |
 | 84 | 2.8 | 2.4 | snare | ring sweeps the scattered details, then rushes the camera |
-| 96 | 3.2 | 3.1 | **impact** · phrase | ring opens onto cream, extruded wordmark lands |
+| 96 | 3.2 | 3.1 | **drop** · phrase | ring opens onto cream, extruded wordmark lands |
 | 108 | 3.6 | 3.2 | snare | "SEO consulting by Mehedi Hassan" |
-| 120 / 129 / 144 | 4.0 / 4.3 / 4.8 | 3.3 / 3.3+ / 4.1 | kicks | map, website, answer objects arrive |
+| 120 / 129 / 144 | 4.0 / 4.3 / 4.8 | 3.3 / 3.3+ / 4.1 | beats | map, website, answer objects arrive |
 | 168 | 5.6 | 4.3 | kick | ring taps the map, camera dives in |
 | 192 | 6.4 | 5.1 | phrase | map unfolds into a ground plane |
 | 204 | 6.8 | 5.2 | snare | business profile rises, pin drops |
@@ -88,9 +83,8 @@ The generator also writes `src/beats.json`: every kick, snare, accent and phrase
 | 384 | 12.8 | 9.1 | phrase | website comes round, light sweeps charcoal → cream |
 | 408 | 13.6 | 9.3 | kick | website explodes into three layers |
 | 435 / 447 / 459 | | 10.1–10.3 | beats | ring scan: structure aligns, content sharpens, links connect |
-| 480 | 16.0 | 11.1 | **accent** | layers slam back together, "Clearer services." |
+| 480 | 16.0 | 11.1 | **phrase start** | layers slam back together, "Clearer services." |
 | 540 | 18.0 | 12.2 | snare | "What we do" block lifts out |
-| 564 | 18.8 | 12.4 | break | drums drop out while the block flies |
 | 576 | 19.2 | 13.1 | phrase | block turns into the answer card, question typed |
 | 600 | 20.0 | 13.3 | kick | source page arrives, information flows up |
 | 636 | 21.2 | 14.2 | snare | ring puts the answer in order |
@@ -98,10 +92,10 @@ The generator also writes `src/beats.json`: every kick, snare, accent and phrase
 | 696 | 23.2 | 15.3 | kick | objects gather, cream horizon rises |
 | 720 | 24.0 | 16.1 | phrase | "Work directly with Mehedi." |
 | 744 / 768 / 792 | 24.8 / 25.6 / 26.4 | 16.3 / 17.1 / 17.3 | kick | Research / Priorities / Action |
-| 840–862 | | 18.3–18.4 | snare roll | objects compress into the ring |
+| 840–862 | | 18.3–18.4 | source fill bar | objects compress into the ring |
 | 864 | 28.8 | 19.1 | **phrase hit** | hard cut to charcoal, shockwave |
-| 888 | 29.6 | 19.3 | **strongest hit** | ring collapses into the wordmark's dot. Reveal complete |
-| 936 | 31.2 | 20.3 | **resolve** | URL glow pulse; CTA held to 32.0 s (about 2.2 s on screen) |
+| 888 | 29.6 | 19.3 | kick | ring collapses into the wordmark's dot. Reveal complete |
+| 912 | 30.4 | 20.1 | **ending** | song's final bar begins; CTA held to 32.0 s (about 2.2 s on screen) |
 
 ## Where to edit
 
@@ -114,7 +108,8 @@ The generator also writes `src/beats.json`: every kick, snare, accent and phrase
 | 3D cards (edge thickness, sheen, contact shadow, internal depth layers, entrance pose) | `src/components/Card3D.tsx` |
 | Extruded wordmark | `src/components/Wordmark3D.tsx` |
 | Scenes | `src/scenes/S1Problem.tsx` … `S7Reveal.tsx` |
-| Music, stems, SFX, markers | `scripts/generate-audio.mjs` (+ SFX cues in `src/timeline.json`) |
+| Music fit (source range, tempo, splice, level) + markers | `scripts/prepare-music.mjs` |
+| SFX | `public/audio/sfx.wav` (frozen); cue list in `src/timeline.json` |
 | Colours | `src/theme.ts` |
 
 Three different 3D treatments are used: a card pulled forward from a layered stack (scenes 1 and 6), the website separating into an exploded view (scene 4), and panels rotating edge-on into the next scene (scene 3→4 and 4→5).

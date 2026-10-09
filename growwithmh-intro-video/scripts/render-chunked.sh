@@ -13,7 +13,7 @@ CHUNK=150
 SEQ=out/frames
 mkdir -p "$SEQ"
 [ "${RESUME:-0}" = 1 ] || rm -f "$SEQ"/*.jpeg
-node scripts/generate-audio.mjs
+node scripts/prepare-music.mjs
 
 # Remotion pads names per chunk (element-000 vs element-0900); normalise to 4 digits.
 normalise() {
@@ -44,7 +44,7 @@ test "$(ls "$SEQ" | wc -l)" -eq "$FRAMES"
 
 ffmpeg -v error -y -framerate 30 -start_number 0 -i "$SEQ/frame-%04d.jpeg" \
   -i public/audio/music.wav -i public/audio/sfx.wav \
-  -filter_complex "[1:a][2:a]amix=inputs=2:normalize=0,alimiter=limit=0.84:level=false[a]" \
+  -filter_complex "[1:a][2:a]amix=inputs=2:normalize=0,alimiter=limit=0.70:attack=1:release=50:level=false[a]" \
   -map 0:v -map "[a]" -c:v libx264 -preset slow -crf 16 -pix_fmt yuv420p -profile:v high \
   -movflags +faststart -c:a aac -b:a 192k -ar 48000 -t "$DURATION" out/growwithmh-intro.mp4
 echo "Wrote out/growwithmh-intro.mp4"

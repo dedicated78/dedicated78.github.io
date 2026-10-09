@@ -1,6 +1,8 @@
 node_modules
 out
 player/dist
-# Generated deterministically by `npm run audio`
-public/audio/**/*.wav
-public/audio/*.wav
+# Built from the supplied track by `npm run audio`
+public/audio/music.wav
+public/audio/.music-raw.wav
+# Supplied third-party track: kept out of the (public) repo. Place it here to rebuild.
+public/audio/source/
