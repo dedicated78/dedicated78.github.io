@@ -3,3 +3,4 @@ build/*.log
 __pycache__/
 *.blend1
 build/render_all.sh
+output/*_prores4444.mov
