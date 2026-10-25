@@ -1,0 +1,4 @@
+build/frames_*/
+build/*.log
+__pycache__/
+*.blend1
