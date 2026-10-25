@@ -294,16 +294,20 @@ def build(args):
     bpy.context.view_layer.update()
     l0, t0_, r0, b0 = pil.getbbox("Painting")
     SIZE = EM / (calo.dimensions.x / ((r0 - l0) / 1000.0))
-    bpy.data.objects.remove(calo); bpy.data.curves.remove(cal)
+    def blender_width(txt):
+        cal.body = txt; cal.size = SIZE
+        bpy.context.view_layer.update()
+        return calo.dimensions.x
     words = ["Painting", "&", "Construction", "Corp."]
     text = " ".join(words)
     x0_px, base_px = 316.0, 1274.0
     backer_mat = mat_backer()
     subs = []
     for k, w in enumerate(words):
-        prefix = " ".join(words[:k]) + (" " if k else "")
-        dx = pil.getlength(prefix) / 1000.0 * EM
-        wwid = pil.getlength(w) / 1000.0 * EM
+        # lay words out with Blender's own glyph metrics: the word's left edge
+        # is where its ink sits inside the full left-aligned line
+        dx = blender_width(" ".join(words[:k + 1])) - blender_width(w)
+        wwid = blender_width(w)
         objs = []
         for kind in ("text", "backer"):
             cu = bpy.data.curves.new(f"Sub_{k}_{kind}", "FONT")
@@ -327,6 +331,8 @@ def build(args):
         subs.append((objs, wwid))
 
     # ---- worker ------------------------------------------------------------
+    bpy.data.objects.remove(calo); bpy.data.curves.remove(cal)
+
     rj = json.load(open(os.path.join(ROOT, "build/rig.json")))
     aj = json.load(open(os.path.join(ROOT, "build/arm.json")))
     S = rj["scale"]
