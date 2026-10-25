@@ -2,3 +2,4 @@ build/frames_*/
 build/*.log
 __pycache__/
 *.blend1
+build/render_all.sh
