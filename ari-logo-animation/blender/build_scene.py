@@ -482,6 +482,7 @@ def animate(sc, pieces, subs, root, sprites, cam, tgt):
                 home = Vector(ob["home"])
                 key_obj(ob, home + Vector((0, -0.05 * (1 - e), -0.035 * (1 - e))), None, f)
                 key_fade(ob, clamp01(x * 1.6), f)
+                ob.hide_render = x <= 0; ob.keyframe_insert("hide_render", frame=f)
         # worker: hinge entrance on the root, rig on the sprites
         ang, rise, wx = worker_entrance(t)
         rhome = Vector(root["home"])
@@ -504,6 +505,8 @@ def animate(sc, pieces, subs, root, sprites, cam, tgt):
             loc = base + Vector((off[0] * MM, 0, -(off[1] + dy_breath) * MM))
             key_obj(ob, loc, Euler((0, math.radians(ang2 + extra), 0)), f)
             key_fade(ob, clamp01((t - WORKER_T0 + 0.02) / 0.22), f)
+            # fully transparent stacked layers would exhaust transparent bounces
+            ob.hide_render = t < WORKER_T0 - 0.02; ob.keyframe_insert("hide_render", frame=f)
         # camera
         c, tg, lens, fstop = camera_at(t)
         key_obj(cam, c, None, f); key_obj(tgt, tg, None, f)
@@ -567,7 +570,7 @@ def render_settings(sc, args):
     cy.use_denoising = True
     cy.denoiser = "OPENIMAGEDENOISE"
     cy.max_bounces = 6; cy.diffuse_bounces = 3; cy.glossy_bounces = 3
-    cy.transparent_max_bounces = 8
+    cy.transparent_max_bounces = 32
     cy.caustics_reflective = False; cy.caustics_refractive = False
     cy.blur_glossy = 1.0
     sc.render.use_motion_blur = True
