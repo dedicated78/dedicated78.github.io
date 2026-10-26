@@ -31,11 +31,28 @@ A 9-second, 1920×1080, 30 fps cinematic logo animation. It was built in Blender
 | Arm looked disconnected, white tube, hat barely tipped | The raised arm was the original foreshortened sleeve rotated about 100°, attached to a long flat white forearm. The hat tilted 7° with the fingertips only touching. | The arm was redrawn as one limb of the uniform: a yellow sleeve with the black shadowed shoulder, fold strokes, hem and cuff tab, and a shaded forearm emerging from the cuff. The hand grips the brim. Two-bone IK solves the elbow from the wrist. During contact the hand is rigidly attached to the hat, so there is no sliding. The tip is about 11°. The original sleeve pixels are used at rest and dissolve into the drawn sleeve in the first 3 frames of motion, so the logo pose stays pixel-identical. |
 | Subtitle overlapped the swash | It used the original logo's position, which crosses the tail. | Moved 30 px (logo scale) below the lowest point of the swash and centred on the lettering. Still black, Montserrat ExtraBold. The knock-out backer was removed. |
 | Assembly not readable | Macro camera 0.4 m from a single part | Separated parts are framed together. Each has a quadratic-Bézier path with a mid-flight arc, 3D rotation that settles slightly before the position, and staggered arrivals 0.14 s apart. The crossing of the A leg and flourish was rebuilt geometrically so each part is a clean shape in flight. |
-| Entrance abrupt, opacity-led | Hinge pop-up plus fade | Pure vertical rise of 0.62 m from behind the letters, with real occlusion and a slight lean that straightens. The only fade is 0.14 s while he is still behind the lettering. |
-| Final logo too small | Camera 3.9 m away with the subtitle inside the tail | The subtitle now sits below. The camera stops at 3.68 m, so the logo is about 39% of frame width; the composition's height limits it. |
+| Entrance abrupt, opacity-led | Hinge pop-up plus fade | Pure vertical rise of 0.62 m from behind the letters, with real occlusion and a slight lean that straightens. The only opacity change is a 2-frame fade-in as the rise begins behind the lettering. |
+| Final logo too small | Camera 3.9 m away with the subtitle inside the tail | The subtitle now sits below. The camera stops at 3.68 m: the logo measures 38.8% of frame width with a 7% top and 6% bottom margin, centred to within 4 px. Going wider would crop the composition vertically. |
 | Flat depth | 40 mm letters, wall 1.1 m back | 50 mm extrusion with a 6-segment bevel, the backdrop 0.72 m behind for readable soft contact shadows, and the worker 65 mm behind the letters (letter shadows fall on him; parallax). |
 | Camera | Catmull-Rom on raw positions, with a fast macro-to-wide pull | A spherical rig (target, azimuth, elevation, distance) with smooth tangents. Rest-to-rest moves use quintic easing, so acceleration is continuous at both ends. |
 | SFX | Assembly passes overlapped heavily | Air passes cover only the fast part of each flight, and the clicks are timed from the actual easing curve. Distinct tonal ticks mark the subtitle. Plastic taps mark brim contact and release. The track is silent from 7.0 s. |
+
+## Quality checks performed
+
+- Both MP4s decode all 270 frames. The SFX version is H.264 + AAC, 1920×1080, 30 fps, 9.00 s. The silent version has a video stream only.
+- A frame-to-frame difference scan found no pops or flicker spikes, including at re-rendered frame boundaries. The final hold (frames 230–270) has a mean change of 0.07/255.
+- Rest pose: the rig's 2D composite before 4.9 s and after 7.25 s differs from the original worker art by zero pixels.
+- Lettering: the assembled vectors match the original strokes with IoU 0.983.
+- Subtitle: the measured gap below the lowest point of the swash is 30 logo px. Spelling is `Painting & Construction Corp.`
+- Camera: speed and acceleration curves have no discontinuities. Rest-to-rest moves are quintic.
+- Audio: true peak −1.4 dBTP, −21.3 LUFS integrated, no clipping, silent from 7.1 s to the end.
+
+## Known limitations
+
+- The A leg shows a 1–2 px swell where it passes the crossing. It's visible only very close, in the first 1.5 s of flight.
+- The original sleeve pixels dissolve into the drawn sleeve over 3 frames as the arm starts moving, and back as it returns. Motion blur hides most of the dissolve.
+- While the worker rises (about 3.1–3.4 s), his lower body passes behind the subtitle words, which briefly reduces their contrast.
+- No transparent version was rendered for v2 (not requested). `--alpha` in the scene builder still supports it.
 
 ## Fidelity notes
 
