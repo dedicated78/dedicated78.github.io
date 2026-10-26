@@ -230,7 +230,7 @@ def sprite_mesh(name, png, org_px, scale, pivot_px, thickness, mat):
     return ob
 
 
-def build_cyclorama(mat):
+def build_cyclorama(mat, z0=0.0):
     """floor + cove + back wall (seamless studio sweep)."""
     me = bpy.data.meshes.new("Cyclorama")
     bm = bmesh.new()
@@ -241,7 +241,7 @@ def build_cyclorama(mat):
         prof.append((wall_y - r + r * math.sin(a), r - r * math.cos(a)))
     prof += [(wall_y, r), (wall_y, 5.0)]
     xs = [-9.0, 9.0]
-    rows = [[bm.verts.new((x, y, z)) for x in xs] for y, z in prof]
+    rows = [[bm.verts.new((x, y, z + z0)) for x in xs] for y, z in prof]
     for i in range(len(rows) - 1):
         bm.faces.new((rows[i][0], rows[i][1], rows[i + 1][1], rows[i + 1][0]))
     bm.to_mesh(me); bm.free()
@@ -260,7 +260,7 @@ def build(args):
     concrete = mat_concrete()
     letters = json.load(open(os.path.join(ROOT, "build/letters.json")))
 
-    cyc = build_cyclorama(concrete)
+    cyc = build_cyclorama(concrete, FLOOR_Z)
 
     # ---- letter pieces ---------------------------------------------------
     DEPTH, BEVEL = 0.050, 0.0020
@@ -329,11 +329,12 @@ def build(args):
     sc.collection.objects.link(root)
     WORKER_Y = 0.065          # clear depth gap behind the 50 mm letters
     root["home"] = list(W(*HINGE_PX) + Vector((0, WORKER_Y, 0)))
-    order = ["head", "hat", "forearm", "hand", "torso", "uparm", "sleeve"]
+    order = ["head", "hat", "upskin", "forearm", "thumb", "fingers", "hand", "torso", "uparm"]
     THICK = 0.006
     # depth of each layer (m, negative = toward camera); tight spacing keeps seams invisible
-    LAYER_Y = {"head": -0.0058, "hat": -0.0064, "forearm": -0.0066, "hand": -0.0070,
-               "torso": -0.0074, "uparm": -0.0082, "sleeve": -0.0086}
+    LAYER_Y = {"head": -0.0058, "hat": -0.0064, "upskin": -0.0066, "forearm": -0.0068,
+               "thumb": -0.0070, "fingers": -0.0071, "hand": -0.0072, "torso": -0.0074,
+               "uparm": -0.0082}
     sprite_pivots = {n: tuple(v[1]) for n, v in rig.pose(0.0).items()}
     sprites = {}
     for i, n in enumerate(order):
@@ -410,8 +411,9 @@ ASSEMBLY = {  # (start, end) seconds - staggered arrivals
     "i":          (1.28, 2.34),
 }
 SUB_T0, SUB_STAGGER, SUB_DUR = 2.42, 0.09, 0.55
-WORKER_T0, WORKER_T1 = 3.02, 3.98
-WORKER_DROP = 0.62          # m below home at the start (behind the lettering)
+WORKER_T0, WORKER_T1 = 2.78, 4.12
+WORKER_DROP = 1.74          # m below home at the start: below the frame edge, behind the logo
+FLOOR_Z = -0.80             # studio floor sits out of view below the floating logo
 
 
 def assembly_k(x):
@@ -441,8 +443,10 @@ def letter_state(name, t):
 def worker_entrance(t):
     """rise from behind the lettering: (lift m, pitch deg, roll deg, progress)."""
     x = clamp01((t - WORKER_T0) / (WORKER_T1 - WORKER_T0))
-    e = 1 - (1 - x) ** 3
-    e = e * e * (3 - 2 * e) * 0.45 + e * 0.55
+    # smootherstep, biased slightly late so he decelerates gently into place;
+    # peak speed is mid-rise, while he is still behind the lettering
+    xs = x ** 0.85
+    e = xs ** 3 * (xs * (6 * xs - 15) + 10)
     lift = -WORKER_DROP * (1 - e)
     pitch = -7.0 * (1 - e) ** 1.5           # leans back slightly while rising, straightens
     roll = 2.2 * math.sin(math.pi * x) * (1 - x)
@@ -506,7 +510,6 @@ def animate(sc, pieces, subs, root, sprites, cam, tgt):
         pose = rig.pose(t); fd = rig.fades(t)
         hd_ft, hat_ft = follow_through(t) if t < 4.8 else (0.0, 0.0)
         br = idle(t)
-        appear = clamp01((t - (WORKER_T0 - 0.03)) / 0.07)   # ~2 frames, as the rise begins behind the letters
         for n, ob in sprites.items():
             ang2, piv, off, sx = pose[n]
             extra = 0.0
@@ -519,9 +522,7 @@ def animate(sc, pieces, subs, root, sprites, cam, tgt):
             base = Vector(ob["base"])
             loc = base + Vector((off[0] * MM, 0, -(off[1] - br) * MM))
             key_obj(ob, loc, Euler((0, math.radians(ang2 + extra), 0)), f, scale=(sx, 1.0, 1.0))
-            fade = appear * fd.get(n, 1.0)
-            key_fade(ob, fade, f)
-            key_hidden(ob, fade <= 0.0, f)
+            key_fade(ob, 1.0, f)          # fully opaque throughout: entrance is pure motion
         # camera
         c, tg, lens, fstop = camera_at(t)
         key_obj(cam, c, None, f); key_obj(tgt, tg, None, f)
@@ -543,7 +544,7 @@ CAM_KEYS = [
     (0.00, (0.03, -0.03, 0.55), -28.0, 10.0, 2.70, 50, 4.5, True),   # separated parts in view
     (1.10, (0.02, -0.02, 0.54), -21.0, 8.5, 2.70, 50, 5.0, False),   # gentle orbit while they launch
     (2.20, (0.00, 0.00, 0.50), -14.0, 7.0, 2.80, 50, 5.6, False),    # assembly completes
-    (2.95, (0.00, 0.00, 0.48), -10.0, 6.0, 2.95, 50, 6.3, False),    # subtitle, front three-quarter
+    (2.95, (0.00, 0.00, 0.51), -10.0, 6.0, 2.95, 50, 6.3, False),    # subtitle, front three-quarter
     (3.95, (0.06, 0.03, 0.92), -6.0, 8.5, 3.00, 50, 7.0, False),     # tilt up with the rise
     (4.85, (0.08, 0.04, 1.02), -4.0, 8.0, 2.64, 50, 7.0, False),     # settle on the worker
     (6.10, (0.07, 0.04, 1.04), -3.0, 7.0, 2.48, 50, 7.0, True),      # push settles during the tip

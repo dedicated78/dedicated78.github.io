@@ -10,7 +10,7 @@ ROOT = rig.ROOT
 S = 2
 arm = json.load(open(os.path.join(ROOT, "build/arm.json")))
 # back -> front (same depth order as the Blender scene)
-ORDER = ["head", "hat", "forearm", "hand", "torso", "uparm", "sleeve"]
+ORDER = ["head", "hat", "upskin", "forearm", "thumb", "fingers", "hand", "torso", "uparm"]
 layers = {}
 for n in ORDER:
     im = Image.open(os.path.join(ROOT, f"build/layers/{n}.png")).convert("RGBA")
