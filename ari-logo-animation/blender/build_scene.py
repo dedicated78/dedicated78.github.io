@@ -10,7 +10,7 @@ usage (bpy as a Python module, Blender 5.2):
   options: --frames 1-270  --samples 96  --alpha  --res 100  --step 1
 
 Units: 1 logo pixel = 1 mm. Logo pixel (u, v) -> world X = (u-686)/1000,
-Z = (1445-v)/1000. Letters stand in the XZ plane, camera looks toward +Y.
+Z = (1545-v)/1000. Letters stand in the XZ plane, camera looks toward +Y.
 """
 import argparse, json, math, os, sys
 import numpy as np
@@ -26,7 +26,7 @@ from mathutils import Vector, Euler  # noqa: E402
 FPS = 30
 DURATION = 9.0
 N_FRAMES = int(DURATION * FPS)
-CX, CZ = 686.0, 1445.0
+CX, CZ = 686.0, 1545.0
 MM = 0.001
 
 
@@ -92,15 +92,6 @@ def mat_black_satin():
     return m
 
 
-def mat_backer():
-    m, n, l = new_mat("Subtitle_Backer")
-    b = n["Principled BSDF"]
-    b.inputs["Base Color"].default_value = (0.80, 0.775, 0.735, 1)
-    b.inputs["Roughness"].default_value = 0.7
-    add_fade(m, n, l, b.outputs["BSDF"])
-    return m
-
-
 def mat_concrete():
     m, n, l = new_mat("Studio_Concrete")
     b = n["Principled BSDF"]
@@ -145,7 +136,7 @@ def curve_from_contours(name, contours, pivot_px, depth, bevel, mat):
     cu = bpy.data.curves.new(name, "CURVE")
     cu.dimensions = "2D"; cu.fill_mode = "BOTH"
     cu.extrude = depth / 2 - bevel
-    cu.bevel_mode = "ROUND"; cu.bevel_depth = bevel; cu.bevel_resolution = 4
+    cu.bevel_mode = "ROUND"; cu.bevel_depth = bevel; cu.bevel_resolution = 6
     cu.resolution_u = 20
     pu, pv = pivot_px
     for c in contours:
@@ -243,7 +234,7 @@ def build_cyclorama(mat):
     """floor + cove + back wall (seamless studio sweep)."""
     me = bpy.data.meshes.new("Cyclorama")
     bm = bmesh.new()
-    wall_y, r = 1.10, 0.55
+    wall_y, r = 0.72, 0.42
     prof = [(-7.0, 0.0), (wall_y - r, 0.0)]
     for k in range(1, 16):
         a = math.radians(90 * k / 16)
@@ -272,7 +263,7 @@ def build(args):
     cyc = build_cyclorama(concrete)
 
     # ---- letter pieces ---------------------------------------------------
-    DEPTH, BEVEL = 0.040, 0.0020
+    DEPTH, BEVEL = 0.050, 0.0020
     layer_y = {"a_thick": -0.004, "a_flourish": -0.002, "a_leg": 0.0, "r": 0.0, "i": 0.0}
     pieces = {}
     for name, cont in letters.items():
@@ -299,36 +290,33 @@ def build(args):
         bpy.context.view_layer.update()
         return calo.dimensions.x
     words = ["Painting", "&", "Construction", "Corp."]
-    text = " ".join(words)
-    x0_px, base_px = 316.0, 1274.0
-    backer_mat = mat_backer()
+    full_w = blender_width(" ".join(words))
+    cal.body = "H"; bpy.context.view_layer.update(); cap_h = calo.dimensions.y
+    # place the line below the lowest point of the swash tail with a clear gap
+    tail_px = max(q[1] for c in letters["a_thick"] for sg in c for q in sg[1:])
+    GAP_PX = 30.0
+    base_px = tail_px + GAP_PX + cap_h / MM
+    x0_px = CX - full_w / MM / 2                 # centred on the Ari lettering
     subs = []
     for k, w in enumerate(words):
         # lay words out with Blender's own glyph metrics: the word's left edge
         # is where its ink sits inside the full left-aligned line
         dx = blender_width(" ".join(words[:k + 1])) - blender_width(w)
         wwid = blender_width(w)
-        objs = []
-        for kind in ("text", "backer"):
-            cu = bpy.data.curves.new(f"Sub_{k}_{kind}", "FONT")
-            cu.body = w; cu.font = font; cu.size = SIZE
-            cu.align_x = "LEFT"
-            if kind == "text":
-                cu.extrude = 0.0035; cu.bevel_depth = 0.0005; cu.bevel_resolution = 2
-            else:
-                # light knock-out outline behind the text (as in the original logo)
-                cu.extrude = 0.0004; cu.bevel_depth = 0.0042; cu.bevel_resolution = 1
-            ob = bpy.data.objects.new(f"Subtitle_{w}_{kind}", cu)
-            ob.data.materials.append(black if kind == "text" else backer_mat)
-            ob.rotation_euler = (math.radians(90), 0, 0)
-            sc.collection.objects.link(ob)
-            objs.append(ob)
-        # word centre as the animation pivot
+        cu = bpy.data.curves.new(f"Sub_{k}", "FONT")
+        cu.body = w; cu.font = font; cu.size = SIZE
+        cu.align_x = "LEFT"
+        cu.extrude = 0.0035; cu.bevel_depth = 0.0005; cu.bevel_resolution = 2
+        ob = bpy.data.objects.new(f"Subtitle_{w}", cu)
+        ob.data.materials.append(black)
+        ob.rotation_euler = (math.radians(90), 0, 0)
+        sc.collection.objects.link(ob)
         base = W(x0_px, base_px)
-        home = Vector((base.x + dx, -0.036, base.z))
-        objs[0]["home"] = list(home); objs[1]["home"] = list(home + Vector((0, 0.0087, 0)))
-        objs[0]["fade"] = 1.0; objs[1]["fade"] = 1.0
-        subs.append((objs, wwid))
+        ob["home"] = list(Vector((base.x + dx, -0.004, base.z)))
+        ob["fade"] = 1.0
+        subs.append(([ob], wwid))
+    print(f"subtitle: baseline v={base_px:.1f}px, left u={x0_px:.1f}px, width {full_w / MM:.1f}px, "
+          f"gap below swash {GAP_PX}px")
 
     # ---- worker ------------------------------------------------------------
     bpy.data.objects.remove(calo); bpy.data.curves.remove(cal)
@@ -339,13 +327,13 @@ def build(args):
     HINGE_PX = (700.0, 792.0)
     root = bpy.data.objects.new("Worker_Root", None)
     sc.collection.objects.link(root)
-    WORKER_Y = 0.034
+    WORKER_Y = 0.065          # clear depth gap behind the 50 mm letters
     root["home"] = list(W(*HINGE_PX) + Vector((0, WORKER_Y, 0)))
-    order = ["head", "hat", "upskin", "forearm", "hand", "torso", "uparm"]
-    THICK = 0.004
+    order = ["head", "hat", "forearm", "hand", "torso", "uparm", "sleeve"]
+    THICK = 0.006
     # depth of each layer (m, negative = toward camera); tight spacing keeps seams invisible
-    LAYER_Y = {"upskin": -0.0050, "head": -0.0058, "hat": -0.0064, "forearm": -0.0066,
-               "hand": -0.0070, "torso": -0.0074, "uparm": -0.0082}
+    LAYER_Y = {"head": -0.0058, "hat": -0.0064, "forearm": -0.0066, "hand": -0.0070,
+               "torso": -0.0074, "uparm": -0.0082, "sleeve": -0.0086}
     sprite_pivots = {n: tuple(v[1]) for n, v in rig.pose(0.0).items()}
     sprites = {}
     for i, n in enumerate(order):
@@ -396,80 +384,102 @@ def build(args):
 
 
 # ---------------------------------------------------------------- animation
-# start offsets of the letter pieces (world m) and rotations (deg) - they
-# float separated in space before the assembly
+# Assembly: every letter part starts separated in space (offset in metres
+# from its final home + a modest 3D rotation in degrees (pitch, roll, yaw)),
+# then travels on its own curved path into place with staggered arrivals.
 SCATTER = {
-    "a_flourish": (Vector((0.10, -0.42, 0.10)), (18, -14, -9)),
-    "a_leg":      (Vector((-0.30, 0.38, 0.30)), (-12, 22, 16)),
-    "a_thick":    (Vector((0.30, 0.55, 0.22)), (10, -10, 14)),
-    "r":          (Vector((0.55, -0.12, 0.34)), (-20, 18, -16)),
-    "i":          (Vector((0.70, 0.30, -0.12)), (14, -24, 10)),
+    "a_flourish": (Vector((-0.26, -0.22, 0.06)), (12, -14, 22)),
+    "a_leg":      (Vector((-0.08, 0.26, 0.24)), (-10, 20, -14)),
+    "a_thick":    (Vector((0.06, -0.18, -0.20)), (14, 8, 18)),
+    "r":          (Vector((0.24, 0.20, 0.20)), (-14, -16, -22)),
+    "i":          (Vector((0.30, -0.22, -0.08)), (10, 18, 26)),
 }
-ASSEMBLY = {  # (start, end) seconds - staggered
-    "a_flourish": (0.95, 1.80),
-    "a_leg":      (1.05, 1.90),
-    "a_thick":    (1.12, 2.00),
-    "r":          (1.22, 2.08),
-    "i":          (1.30, 2.16),
+# arc of each path (added at mid-flight): engineered sweep, never random
+ARC = {
+    "a_flourish": Vector((0.00, -0.07, 0.06)),
+    "a_leg":      Vector((-0.05, 0.00, 0.05)),
+    "a_thick":    Vector((0.04, -0.06, -0.03)),
+    "r":          Vector((0.05, 0.00, 0.05)),
+    "i":          Vector((0.05, -0.06, 0.00)),
 }
-SUB_T0, SUB_STAGGER, SUB_DUR = 2.12, 0.10, 0.62
-WORKER_T0, WORKER_T1 = 3.00, 3.78
+ASSEMBLY = {  # (start, end) seconds - staggered arrivals
+    "a_flourish": (0.72, 1.78),
+    "a_leg":      (0.86, 1.92),
+    "a_thick":    (1.00, 2.06),
+    "r":          (1.14, 2.20),
+    "i":          (1.28, 2.34),
+}
+SUB_T0, SUB_STAGGER, SUB_DUR = 2.42, 0.09, 0.55
+WORKER_T0, WORKER_T1 = 3.02, 3.98
+WORKER_DROP = 0.62          # m below home at the start (behind the lettering)
+
+
+def assembly_k(x):
+    """position progress: gentle launch, long precise deceleration, no bounce."""
+    x = clamp01(x)
+    a = 1 - (1 - x) ** 3.4
+    return clamp01(a * a * (3 - 2 * a) * 0.30 + a * 0.70)
 
 
 def letter_state(name, t):
     t0, t1 = ASSEMBLY[name]
     off, rot = SCATTER[name]
-    drift = (t0 - min(t, t0)) / t0 if t0 > 0 else 0       # 1 -> 0 before assembly
-    # slow pre-assembly drift so the separated parts feel suspended, alive
-    pre_off = off + Vector((0.025, 0.02, -0.015)) * drift
-    x = (t - t0) / (t1 - t0)
-    if x <= 0:
-        k = 0.0
-    else:
-        k = 1 - (1 - clamp01(x)) ** 3.2                      # decelerate into place
-        k = k * k * (3 - 2 * k) * 0.35 + k * 0.65            # soft start, no bounce
-    k = clamp01(k)
-    # curved path: the depth component lags the lateral one (engineered arc)
-    kd = clamp01(k * 1.15 - 0.05) ** 1.15
-    pos = Vector((pre_off.x * (1 - k), pre_off.y * (1 - kd), pre_off.z * (1 - k)))
-    r = [math.radians(a) * (1 - k) for a in rot]
+    # suspended drift before launch so the separated parts read as physical
+    pre = clamp01(1 - t / t0)
+    drift = Vector((0.018, -0.012, 0.010)) * pre
+    k = assembly_k((t - t0) / (t1 - t0))
+    # quadratic Bezier: start -> (start/2 + arc) -> home
+    c = off * 0.5 + ARC[name]
+    start = off + drift
+    pos = start * (1 - k) ** 2 + c * (2 * (1 - k) * k)
+    kr = clamp01(k * 1.08)                              # rotation settles slightly first
+    wob = 2.0 * pre                                     # slow pre-launch turn (deg)
+    r = [math.radians(a * (1 - kr) + wob * (i - 1)) for i, a in enumerate(rot)]
     return pos, r, k
 
 
 def worker_entrance(t):
-    """hinge angle (deg about X, negative = lying back) + rise (m)."""
+    """rise from behind the lettering: (lift m, pitch deg, roll deg, progress)."""
     x = clamp01((t - WORKER_T0) / (WORKER_T1 - WORKER_T0))
     e = 1 - (1 - x) ** 3
-    e = e * e * (3 - 2 * e) * 0.4 + e * 0.6
-    ang = -84.0 * (1 - e)
-    rise = -0.10 * (1 - e)
-    return ang, rise, x
+    e = e * e * (3 - 2 * e) * 0.45 + e * 0.55
+    lift = -WORKER_DROP * (1 - e)
+    pitch = -7.0 * (1 - e) ** 1.5           # leans back slightly while rising, straightens
+    roll = 2.2 * math.sin(math.pi * x) * (1 - x)
+    return lift, pitch, roll, x
 
 
 def follow_through(t):
-    """damped secondary motion on head/hat after the worker plants (deg)."""
-    dt = t - (WORKER_T1 - 0.12)
-    if dt < 0:
-        lag = clamp01((t - WORKER_T0) / (WORKER_T1 - WORKER_T0))
-        return -2.5 * math.sin(math.pi * lag), -1.5 * math.sin(math.pi * lag)
-    d = math.exp(-dt * 5.0)
-    return 2.2 * d * math.sin(dt * 11.0), 3.0 * d * math.sin(dt * 11.0 - 0.6)
+    """head / hat secondary motion during the rise and as he settles (deg)."""
+    x = clamp01((t - WORKER_T0) / (WORKER_T1 - WORKER_T0))
+    if t < WORKER_T1 - 0.10:
+        return -2.0 * math.sin(math.pi * x), -1.2 * math.sin(math.pi * x)
+    dt = t - (WORKER_T1 - 0.10)
+    d = math.exp(-dt * 5.5)
+    return 1.6 * d * math.sin(dt * 10.0), 2.2 * d * math.sin(dt * 10.0 - 0.6)
 
 
 def idle(t):
-    """breathing: tiny shoulder rise (px) on the torso chain."""
-    return 1.4 * math.sin(2 * math.pi * (t - 3.8) / 2.6) * clamp01((t - 3.8) / 0.6)
+    """breathing: tiny rise (logo px) of the upper body, settles out by the final hold."""
+    env = clamp01((t - 4.0) / 0.6) * clamp01((7.6 - t) / 0.6)
+    return 1.0 * math.sin(2 * math.pi * (t - 4.0) / 2.4) * env
 
 
-def key_obj(ob, loc=None, rot=None, frame=1):
+def key_obj(ob, loc=None, rot=None, frame=1, scale=None):
     if loc is not None:
         ob.location = loc; ob.keyframe_insert("location", frame=frame)
     if rot is not None:
         ob.rotation_euler = rot; ob.keyframe_insert("rotation_euler", frame=frame)
+    if scale is not None:
+        ob.scale = scale; ob.keyframe_insert("scale", frame=frame)
 
 
 def key_fade(ob, v, frame):
     ob["fade"] = v; ob.keyframe_insert('["fade"]', frame=frame)
+
+
+def key_hidden(ob, hidden, frame):
+    ob.hide_render = hidden; ob.keyframe_insert("hide_render", frame=frame)
 
 
 def animate(sc, pieces, subs, root, sprites, cam, tgt):
@@ -480,39 +490,38 @@ def animate(sc, pieces, subs, root, sprites, cam, tgt):
             pos, r, k = letter_state(name, t)
             home = Vector(ob["home"])
             key_obj(ob, home + pos, Euler((math.radians(90) + r[0], r[1], r[2])), f)
-        # subtitle words: rise + fade, staggered
+        # subtitle words: short rise + opacity, staggered left to right
         for k, (objs, wwid) in enumerate(subs):
             x = clamp01((t - SUB_T0 - k * SUB_STAGGER) / SUB_DUR)
             e = 1 - (1 - x) ** 3
             for ob in objs:
                 home = Vector(ob["home"])
-                key_obj(ob, home + Vector((0, -0.05 * (1 - e), -0.035 * (1 - e))), None, f)
-                key_fade(ob, clamp01(x * 1.6), f)
-                ob.hide_render = x <= 0; ob.keyframe_insert("hide_render", frame=f)
-        # worker: hinge entrance on the root, rig on the sprites
-        ang, rise, wx = worker_entrance(t)
+                key_obj(ob, home + Vector((0, -0.03 * (1 - e), -0.03 * (1 - e))), None, f)
+                key_fade(ob, clamp01(x * 1.8), f)
+                key_hidden(ob, x <= 0, f)
+        # worker: positional rise behind the letters, rig on the sprites
+        lift, pitch, roll, wx = worker_entrance(t)
         rhome = Vector(root["home"])
-        key_obj(root, rhome + Vector((0, 0, rise)), Euler((math.radians(ang), 0, 0)), f)
-        pose = rig.pose(t)
-        hd_ft, hat_ft = follow_through(t) if t < 4.6 else (0.0, 0.0)
+        key_obj(root, rhome + Vector((0, 0, lift)), Euler((math.radians(pitch), math.radians(roll), 0)), f)
+        pose = rig.pose(t); fd = rig.fades(t)
+        hd_ft, hat_ft = follow_through(t) if t < 4.8 else (0.0, 0.0)
         br = idle(t)
+        appear = clamp01((t - (WORKER_T0 - 0.14)) / 0.14)   # while still hidden behind the letters
         for n, ob in sprites.items():
-            ang2, piv, off = pose[n]
+            ang2, piv, off, sx = pose[n]
             extra = 0.0
             if n == "head":
                 extra = hd_ft
             if n == "hat":
                 extra = hd_ft + hat_ft
-                # keep the hat seated on the head while the head lags
-                hp = rig.rot(rig.HAT_PIV, rig.HEAD_PIV, hd_ft)
+                hp = rig.rot(rig.HAT_PIV, rig.HEAD_PIV, hd_ft)   # keep the hat seated
                 off = off + (hp - rig.HAT_PIV)
             base = Vector(ob["base"])
-            dy_breath = -br if n in ("torso", "uparm", "upskin", "forearm", "hand", "head", "hat") else 0
-            loc = base + Vector((off[0] * MM, 0, -(off[1] + dy_breath) * MM))
-            key_obj(ob, loc, Euler((0, math.radians(ang2 + extra), 0)), f)
-            key_fade(ob, clamp01((t - WORKER_T0 + 0.02) / 0.22), f)
-            # fully transparent stacked layers would exhaust transparent bounces
-            ob.hide_render = t < WORKER_T0 - 0.02; ob.keyframe_insert("hide_render", frame=f)
+            loc = base + Vector((off[0] * MM, 0, -(off[1] - br) * MM))
+            key_obj(ob, loc, Euler((0, math.radians(ang2 + extra), 0)), f, scale=(sx, 1.0, 1.0))
+            fade = appear * fd.get(n, 1.0)
+            key_fade(ob, fade, f)
+            key_hidden(ob, fade <= 0.0, f)
         # camera
         c, tg, lens, fstop = camera_at(t)
         key_obj(cam, c, None, f); key_obj(tgt, tg, None, f)
@@ -522,47 +531,54 @@ def animate(sc, pieces, subs, root, sprites, cam, tgt):
         cam.data.dof.keyframe_insert("focus_distance", frame=f)
 
 
-# camera keys: (time, camera position, look-at target, focal length, f-stop)
-_LET = None
+# ---------------------------------------------------------------- camera
+# Spherical camera rig around a look-at target: azimuth (deg, 0 = straight on,
+# negative = from the left), elevation (deg), distance (m), focal length,
+# f-stop. Keys marked hold=True get zero velocity (the camera eases to rest).
+FINAL_DIST = 3.68            # full logo ~39% of frame width with comfortable margins
+COMP_CENTER = (0.0, 0.0, 0.777)
+
+CAM_KEYS = [
+    # time  target                az    el    dist  lens  f-stop hold
+    (0.00, (0.03, -0.03, 0.55), -28.0, 10.0, 2.70, 50, 4.5, True),   # separated parts in view
+    (1.10, (0.02, -0.02, 0.54), -21.0, 8.5, 2.70, 50, 5.0, False),   # gentle orbit while they launch
+    (2.20, (0.00, 0.00, 0.50), -14.0, 7.0, 2.80, 50, 5.6, False),    # assembly completes
+    (2.95, (0.00, 0.00, 0.48), -10.0, 6.0, 2.95, 50, 6.3, False),    # subtitle, front three-quarter
+    (3.95, (0.06, 0.03, 0.92), -6.0, 8.5, 3.00, 50, 7.0, False),     # tilt up with the rise
+    (4.85, (0.08, 0.04, 1.02), -4.0, 8.0, 2.64, 50, 7.0, False),     # settle on the worker
+    (6.10, (0.07, 0.04, 1.04), -3.0, 7.0, 2.48, 50, 7.0, True),      # push settles during the tip
+    (7.62, COMP_CENTER, -0.6, 1.0, FINAL_DIST, 50, 8.0, True),        # final framing reached
+    (9.00, COMP_CENTER, -0.4, 1.0, FINAL_DIST + 0.015, 50, 8.0, True),  # near-stationary hold
+]
 
 
-def piece_point(name, u, v, t, front=True):
-    """world position of logo pixel (u, v) on a letter piece's front face at time t."""
-    global _LET
-    if _LET is None:
-        _LET = json.load(open(os.path.join(ROOT, "build/letters.json")))
-    piv = contour_centroid(_LET[name])
-    pos, r, _ = letter_state(name, t)
-    local = Vector(((u - piv[0]) * MM, (piv[1] - v) * MM, 0.02 if front else 0.0))
-    rotm = Euler((math.radians(90) + r[0], r[1], r[2])).to_matrix()
-    layer_y = {"a_thick": -0.004, "a_flourish": -0.002}.get(name, 0.0)
-    return W(*piv) + Vector((0, layer_y, 0)) + pos + rotm @ local
+def cam_spline(t):
+    ts = [k[0] for k in CAM_KEYS]
+    vals = [np.array(list(k[1]) + list(k[2:7]), float) for k in CAM_KEYS]
+    holds = [k[7] for k in CAM_KEYS]
+    if t <= ts[0]: return vals[0]
+    if t >= ts[-1]: return vals[-1]
+    i = max(j for j in range(len(ts) - 1) if ts[j] <= t)
+    def tan(j):
+        if holds[j] or j == 0 or j == len(ts) - 1:
+            return np.zeros_like(vals[j])
+        return (vals[j + 1] - vals[j - 1]) / (ts[j + 1] - ts[j - 1])
+    h = ts[i + 1] - ts[i]; x = (t - ts[i]) / h
+    if holds[i] and holds[i + 1]:
+        # rest-to-rest move: quintic ease, continuous acceleration at both ends
+        q = x ** 3 * (x * (6 * x - 15) + 10)
+        return vals[i] * (1 - q) + vals[i + 1] * q
+    h00 = 2 * x**3 - 3 * x**2 + 1; h10 = x**3 - 2 * x**2 + x
+    h01 = -2 * x**3 + 3 * x**2; h11 = x**3 - x**2
+    return h00 * vals[i] + h10 * h * tan(i) + h01 * vals[i + 1] + h11 * h * tan(i + 1)
 
 
 def camera_at(t):
-    fa = piece_point("a_flourish", 215, 985, 0.0)      # thick body of the curl
-    fb = piece_point("a_flourish", 330, 905, 1.0)      # where the sweep leaves the curl
-    keys = [
-        # S1 macro: grazing glide along the flourish's bevelled edge
-        (0.00, list(fa + Vector((-0.40, -0.62, 0.20))), list(fa), 85, 2.8),
-        (1.00, list(fb + Vector((0.16, -0.80, 0.13))), list(fb + Vector((0.05, 0.0, 0.0))), 75, 3.5),
-        # S2 pull back to a perspective angle while the parts assemble
-        (2.00, [-1.40, -3.05, 1.22], [0.06, 0.0, 0.50], 50, 6.0),
-        # S3 ease to a front three-quarter
-        (3.00, [-0.92, -3.40, 1.12], [0.02, 0.0, 0.56], 50, 7.0),
-        # S4 tilt up with the worker
-        (4.00, [-0.50, -3.35, 1.42], [0.01, 0.03, 0.92], 50, 7.0),
-        # S5 slightly elevated, front facing
-        (5.00, [-0.20, -3.25, 1.35], [0.04, 0.03, 0.90], 52, 7.0),
-        # S6 slow push toward the signature gesture
-        (6.00, [-0.14, -2.95, 1.34], [0.03, 0.03, 0.95], 54, 7.0),
-        # S7/S8 dolly back to the full logo
-        (7.00, [-0.10, -3.30, 1.10], [0.0, 0.03, 0.84], 52, 8.0),
-        (8.00, [-0.03, -3.82, 0.86], [0.0, 0.03, 0.735], 50, 9.0),
-        (9.00, [0.0, -3.86, 0.84], [0.0, 0.03, 0.73], 50, 9.0),
-    ]
-    v = smooth_keys([(k[0], k[1] + k[2] + [k[3], k[4]]) for k in keys], t)
-    return Vector(v[0:3]), Vector(v[3:6]), float(v[6]), float(v[7])
+    v = cam_spline(t)
+    tg = Vector(v[0:3]); az, el, d, lens, fstop = v[3:8]
+    a, e = math.radians(az), math.radians(el)
+    c = tg + Vector((d * math.sin(a) * math.cos(e), -d * math.cos(a) * math.cos(e), d * math.sin(e)))
+    return c, tg, float(lens), float(fstop)
 
 
 # ---------------------------------------------------------------- render

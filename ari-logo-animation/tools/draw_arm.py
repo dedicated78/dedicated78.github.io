@@ -1,10 +1,20 @@
-"""Draw the parts of the worker's right arm that are NOT in the original logo
-(upper-arm skin, forearm, hand) as vector art in the logo's ink style:
-white skin, heavy black outline, graphic black shading.
+"""Draw the worker's raised right arm as vector art in the logo's ink style.
 
-Everything is authored in logo-pixel space at the RAISED pose (two fingers
-resting on the hard-hat brim), so the raised pose is the identity transform
-for these sprites. Output: build/svg/<part>.svg + build/arm.json.
+v2: the whole arm is redrawn so it reads as one connected limb of the
+original uniform:
+  sleeve   yellow sleeve (shoulder to just past the elbow) with the logo's
+           black shadowed shoulder, curved fold strokes, hem and cuff tab
+  forearm  skin with the logo's heavy graphic black shading on the underside
+  hand     right hand gripping the hard-hat brim: index + middle fingers over
+           the top of the brim, thumb underneath, ring + little fingers curled
+
+The original foreshortened sleeve (build/layers/uparm.png) is kept for the
+rest pose so the logo pose stays pixel-identical; tools/rig.py dissolves to
+the drawn sleeve as the arm starts to move.
+
+Authoring pose = arm raised, fingers on the (untipped) brim. The sleeve is
+authored along its own +x axis (pivot at the shoulder) so the rig can apply
+axial foreshortening. Output: build/svg/*.svg + build/arm.json.
 """
 import json, math, os
 import numpy as np
@@ -15,68 +25,100 @@ os.makedirs(OUT, exist_ok=True)
 
 INK = "#1b1611"
 SKIN = "#fbfbfc"
-SW = 4.4          # outer ink weight (logo px) - matches the face outline
-SW_IN = 2.5       # interior line weight
+YEL = "#f3b61b"
+SW = 5.0          # outer ink weight (logo px) - matches the uniform outlines
+SW_IN = 2.6       # interior line weight
 
-rig = json.load(open(os.path.join(ROOT, "build/rig.json")))
-P = np.array(rig["pivots"]["uparm"], float)          # shoulder pivot
-SLEEVE_END = np.array([522.0, 642.0])                 # sleeve opening centre at rest
-REST_VEC = SLEEVE_END - P
-L_SLEEVE = float(np.linalg.norm(REST_VEC))
-REST_ANG = math.degrees(math.atan2(REST_VEC[1], REST_VEC[0]))
-UP_ANG = 205.0                                        # raised upper-arm angle (screen deg)
-SKIN_EXT = 18.0                                       # visible upper-arm skin below sleeve
-L_UP = L_SLEEVE + SKIN_EXT
-GRIP = np.array([627.0, 223.0])                       # fingertips on the brim (logo px)
-TIP_P = 97.0                                          # wrist -> fingertip distance
-HAND_BEND = -6.0                                      # hand vs forearm angle
+# ---------------------------------------------------------------- geometry
+P = np.array([566.0, 500.0])          # shoulder joint (inside the black shoulder)
+L_UP = 150.0                          # shoulder -> elbow (raised; upper arm angled toward camera)
+SLEEVE_END = 168.0                    # sleeve covers just past the elbow
+REST_SLEEVE_END = np.array([522.0, 642.0])  # tip of the original sleeve at rest
+C = np.array([632.0, 224.0])          # pinch centre on the brim front edge
+HK = 1.30                             # hand scale (hand authored around C)
+
 
 def unit(deg):
-    r = math.radians(deg)
-    return np.array([math.cos(r), math.sin(r)])
+    r = math.radians(deg); return np.array([math.cos(r), math.sin(r)])
 
-a = unit(UP_ANG)
-E = P + a * L_UP                                      # elbow at raised pose
-O = P + a * L_SLEEVE                                  # sleeve opening at raised pose
-# forearm angle so that wrist + hand (bent by HAND_BEND) lands the tips on GRIP
-v = GRIP - E
-D = float(np.linalg.norm(v))
-base = math.degrees(math.atan2(v[1], v[0]))
-# solve |E + u(f) Lf + u(f+bend) TIP_P - GRIP| = 0 with Lf free: pick f s.t. tips on line
-def solve():
-    best = None
-    for f in np.linspace(base - 15, base + 15, 3001):
-        # project: Lf such that remaining vector is u(f+bend)*TIP_P
-        w = GRIP - E - unit(f + HAND_BEND) * TIP_P
-        Lf = float(np.dot(w, unit(f)))
-        err = np.linalg.norm(w - unit(f) * Lf)
-        if best is None or err < best[0]:
-            best = (err, f, Lf)
-    return best[1], best[2]
-FORE_ANG, L_FORE = solve()
-WR = E + unit(FORE_ANG) * L_FORE                      # wrist
-HAND_ANG = FORE_ANG + HAND_BEND
+
+def hand_pt(x, y):
+    """hand authored in a box around the pinch centre, scaled by HK."""
+    return C + HK * (np.array([x, y], float) - C)
+
+
+W0 = hand_pt(572.0, 268.0)            # wrist centre in the authoring pose
+L_FORE = 178.0                        # elbow -> wrist
+
+
+def ik(target, L1, L2):
+    d = target - P; D = float(np.linalg.norm(d))
+    base = math.degrees(math.atan2(d[1], d[0]))
+    a = math.degrees(math.acos(max(-1, min(1, (L1 * L1 + D * D - L2 * L2) / (2 * L1 * D)))))
+    up = base - a
+    E = P + unit(up) * L1
+    v = target - E
+    return up, math.degrees(math.atan2(v[1], v[0])), E
+
+
+UP_ANG, FORE_ANG, E0 = ik(W0, L_UP, L_FORE)
+HAND_ANG = math.degrees(math.atan2(*(C - W0)[::-1]))   # wrist -> pinch direction
+REST_VEC = REST_SLEEVE_END - P
+REST_ANG = math.degrees(math.atan2(REST_VEC[1], REST_VEC[0]))
+REST_SCALE = float(np.linalg.norm(REST_VEC)) / SLEEVE_END
+
 
 def frame(origin, ang):
-    u = unit(ang); n = np.array([-u[1], u[0]])        # n: 90deg clockwise on screen
+    u = unit(ang); n = np.array([-u[1], u[0]])
     return lambda s, t: origin + u * s + n * t
 
-def path(cmds):
-    out = []
-    for c in cmds:
-        out.append("Z" if c[0] == "Z" else c[0] + " " + " ".join(f"{q[0]:.2f},{q[1]:.2f}" for q in c[1:]))
-    return " ".join(out)
 
-def capsule(f, p0, p1, q, hw0, hw1, bend=0.0):
-    """finger-like rounded capsule along p from p0 to p1 at offset q."""
-    m = (p0 + p1) / 2
-    return path([
-        ("M", f(p0, q - hw0)),
-        ("C", f(m, q - hw0 + bend), f(p1 - hw1, q - hw1 + bend), f(p1 - hw1 * 0.3, q - hw1 + bend)),
-        ("C", f(p1 + hw1 * 0.55, q - hw1 * 0.8 + bend), f(p1 + hw1 * 0.55, q + hw1 * 0.8 + bend), f(p1 - hw1 * 0.3, q + hw1 + bend)),
-        ("C", f(p1 - hw1, q + hw1 + bend), f(m, q + hw0 + bend), f(p0, q + hw0)),
-        ("Z",),
-    ])
+def fmt(p):
+    return f"{p[0]:.2f},{p[1]:.2f}"
+
+
+def smooth_closed(pts, tension=0.5):
+    """Catmull-Rom spline through pts -> closed cubic Bezier path."""
+    pts = [np.asarray(p, float) for p in pts]; n = len(pts)
+    d = [f"M {fmt(pts[0])}"]
+    for i in range(n):
+        p0, p1, p2, p3 = pts[i - 1], pts[i], pts[(i + 1) % n], pts[(i + 2) % n]
+        c1 = p1 + (p2 - p0) * tension / 3; c2 = p2 - (p3 - p1) * tension / 3
+        d.append(f"C {fmt(c1)} {fmt(c2)} {fmt(p2)}")
+    return " ".join(d) + " Z"
+
+
+def smooth_open(pts, tension=0.5):
+    pts = [np.asarray(p, float) for p in pts]; n = len(pts)
+    d = [f"M {fmt(pts[0])}"]
+    for i in range(n - 1):
+        p0 = pts[max(i - 1, 0)]; p1, p2 = pts[i], pts[i + 1]; p3 = pts[min(i + 2, n - 1)]
+        c1 = p1 + (p2 - p0) * tension / 3; c2 = p2 - (p3 - p1) * tension / 3
+        d.append(f"C {fmt(c1)} {fmt(c2)} {fmt(p2)}")
+    return " ".join(d)
+
+
+def bez(ctrl, n=24):
+    ctrl = [np.asarray(c, float) for c in ctrl]
+    t = np.linspace(0, 1, n)[:, None]
+    if len(ctrl) == 3:
+        return (1 - t) ** 2 * ctrl[0] + 2 * (1 - t) * t * ctrl[1] + t ** 2 * ctrl[2]
+    return ((1 - t) ** 3 * ctrl[0] + 3 * (1 - t) ** 2 * t * ctrl[1]
+            + 3 * (1 - t) * t ** 2 * ctrl[2] + t ** 3 * ctrl[3])
+
+
+def finger(ctrl, w0, w1):
+    """tapered, round-tipped finger along a Bezier centreline -> closed path."""
+    c = bez(ctrl, 28)
+    tan = np.gradient(c, axis=0); tan /= np.linalg.norm(tan, axis=1)[:, None]
+    nor = np.stack([-tan[:, 1], tan[:, 0]], 1)
+    w = np.linspace(w0, w1, len(c))[:, None] / 2
+    left = c + nor * w; right = c - nor * w
+    tip = c[-1]; tdir = tan[-1]; tn = nor[-1]; r = w1 / 2
+    cap = [tip + r * (math.cos(a) * tn + math.sin(a) * tdir) for a in np.linspace(0, math.pi, 9)]
+    pts = list(left) + cap[1:-1] + list(right[::-1])
+    return "M " + " L ".join(fmt(p) for p in pts) + " Z"
+
 
 def svg(name, body, bbox):
     x0, y0, x1, y1 = bbox
@@ -84,93 +126,97 @@ def svg(name, body, bbox):
         f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="{x0} {y0} {x1-x0} {y1-y0}" '
         f'width="{x1-x0}" height="{y1-y0}">{body}</svg>')
 
-BOX = {"upskin": [330, 340, 520, 520], "forearm": [340, 190, 640, 520], "hand": [520, 150, 720, 330]}
 
-# ------------------------------------------------------------ upper-arm skin
-f = frame(O, UP_ANG)
-hw = 29.0
-s0, s1 = -46.0, SKIN_EXT + 10
-up_body = path([("M", f(s0, -hw)), ("L", f(s1, -hw + 1)), ("L", f(s1, hw - 1)), ("L", f(s0, hw)), ("Z",)])
-up_lines = (f'<path d="{path([("M", f(s0, -hw)), ("L", f(s1, -hw + 1))])}"/>'
-            f'<path d="{path([("M", f(s0, hw)), ("L", f(s1, hw - 1))])}"/>')
-up_shade = path([("M", f(s0, 10)), ("L", f(s1, 12)), ("L", f(s1, hw - 1)), ("L", f(s0, hw)), ("Z",)])
-svg("upskin", f'<path d="{up_body}" fill="{SKIN}"/><path d="{up_shade}" fill="{INK}"/>'
-              f'<g fill="none" stroke="{INK}" stroke-width="{SW}" stroke-linecap="round">{up_lines}</g>',
-    BOX["upskin"])
+STROKE = f'stroke="{INK}" stroke-width="{SW}" stroke-linejoin="round"'
+THIN = f'fill="none" stroke="{INK}" stroke-width="{SW_IN}" stroke-linecap="round"'
 
-# ------------------------------------------------------------------- forearm
-# n points to the forearm's underside (toward the body / screen-right-down)
-f = frame(E, FORE_ANG)
-L = L_FORE + 12
-outline = path([
-    ("M", f(0, -30)),
-    ("C", f(45, -38), f(110, -30), f(L, -21)),      # outer edge, brachioradialis bulge
-    ("L", f(L, 20)),
-    ("C", f(140, 24), f(70, 33), f(14, 30)),        # inner edge, flexor bulge
-    ("C", f(-12, 29), f(-32, 16), f(-32, 0)),       # elbow
-    ("C", f(-32, -17), f(-17, -30), f(0, -30)),
-    ("Z",),
-])
-shade = path([
-    ("M", f(18, 30)), ("C", f(70, 32), f(140, 24), f(L, 20)),
-    ("L", f(L, 9)), ("C", f(150, 13), f(90, 19), f(18, 30)), ("Z",),
-])
-elbow_shade = path([("M", f(-30, 8)), ("C", f(-24, 22), f(-8, 29), f(14, 30)),
-                    ("C", f(-4, 23), f(-18, 17), f(-30, 8)), ("Z",)])
-crease = path([("M", f(-6, -14)), ("C", f(0, -8), f(2, -1), f(0, 6))])
-muscle = path([("M", f(40, -30)), ("C", f(70, -22), f(100, -20), f(130, -21))])
+# ---------------------------------------------------------------- sleeve
+# Authored along +x from the shoulder pivot (axis angle 0); the rig rotates it
+# to UP_ANG and scales it along x for foreshortening. t < 0 is the top side
+# (screen up when the arm is raised), t > 0 the underside.
+f = frame(P, 0.0)
+S_END = SLEEVE_END
+top = [(-8, -50), (30, -57), (75, -57), (120, -53), (S_END, -46)]
+bot = [(S_END, 45), (125, 50), (80, 53), (35, 52), (-8, 48)]
+cap = [(-36, 32), (-52, 0), (-36, -34)]
+outline_pts = [f(*p) for p in top + bot + cap]
+sleeve_body = smooth_closed(outline_pts, 0.45)
+# black shadowed shoulder (like the original shoulder) up to the seam
+shoulder = smooth_closed([f(*p) for p in [(-52, 0), (-36, -34), (-8, -50), (30, -57), (50, -55),
+                                          (40, -18), (48, 20), (34, 52), (-8, 48), (-36, 32)]], 0.45)
+# yellow highlight stroke on the shoulder (as in the original)
+sh_high = smooth_closed([f(*p) for p in [(-26, -30), (6, -44), (36, -47), (12, -34)]], 0.5)
+# underside shadow + fold crescents
+under = smooth_closed([f(*p) for p in [(50, 30), (90, 26), (125, 24), (150, 26), (S_END - 4, 42),
+                                       (125, 49), (90, 52), (54, 51)]], 0.45)
+fold1 = smooth_closed([f(*p) for p in [(64, -8), (92, -20), (128, -18), (100, -8), (78, 4)]], 0.5)
+fold2 = smooth_closed([f(*p) for p in [(96, 10), (124, 2), (150, 8), (128, 16)]], 0.5)
+top_line = smooth_open([f(*p) for p in [(56, -44), (96, -46), (136, -40)]])
+# hem + rolled cuff with the uniform's square tab
+hem = smooth_closed([f(*p) for p in [(146, -49), (155, -48), (155, 47), (146, 48)]], 0.2)
+tab = "M " + " L ".join(fmt(f(*p)) for p in [(122, -50), (140, -49), (140, -34), (122, -35)]) + " Z"
+SB = [P[0] - 70, P[1] - 70, P[0] + S_END + 20, P[1] + 70]
+svg("sleeve",
+    f'<path d="{sleeve_body}" fill="{YEL}"/>'
+    f'<path d="{under}" fill="{INK}"/><path d="{fold1}" fill="{INK}"/><path d="{fold2}" fill="{INK}"/>'
+    f'<path d="{shoulder}" fill="{INK}"/><path d="{sh_high}" fill="{YEL}"/>'
+    f'<path d="{hem}" fill="{INK}"/>'
+    f'<path d="{tab}" fill="{YEL}" stroke="{INK}" stroke-width="{SW_IN}"/>'
+    f'<path d="{top_line}" {THIN}/>'
+    f'<path d="{sleeve_body}" fill="none" {STROKE}/>',
+    [int(v) for v in SB])
+
+# ---------------------------------------------------------------- forearm
+f = frame(E0, FORE_ANG)          # n (t > 0) = underside of the raised forearm
+L = L_FORE + 14
+fo_out = smooth_closed([f(*p) for p in [
+    (-30, 0), (-18, -30), (12, -38), (60, -40), (120, -33), (L, -25),
+    (L, 25), (125, 30), (65, 37), (12, 36), (-18, 28)]], 0.45)
+fo_shade = smooth_closed([f(*p) for p in [
+    (6, 14), (60, 16), (125, 12), (L, 8), (L, 25), (125, 30), (65, 37), (12, 36)]], 0.45)
+fo_muscle = smooth_open([f(*p) for p in [(30, -20), (70, -16), (115, -14)]])
+fo_tendon = smooth_open([f(*p) for p in [(120, -6), (150, -5), (176, -3)]])
+FB = [int(min(E0[0], W0[0]) - 50), int(min(E0[1], W0[1]) - 50),
+      int(max(E0[0], W0[0]) + 50), int(max(E0[1], W0[1]) + 50)]
 svg("forearm",
-    f'<path d="{outline}" fill="{SKIN}" stroke="{INK}" stroke-width="{SW}" stroke-linejoin="round"/>'
-    f'<path d="{shade}" fill="{INK}"/><path d="{elbow_shade}" fill="{INK}"/>'
-    f'<path d="{crease}" fill="none" stroke="{INK}" stroke-width="{SW_IN}" stroke-linecap="round"/>'
-    f'<path d="{muscle}" fill="none" stroke="{INK}" stroke-width="{SW_IN*0.8}" stroke-linecap="round"/>',
-    BOX["forearm"])
+    f'<path d="{fo_out}" fill="{SKIN}"/><path d="{fo_shade}" fill="{INK}"/>'
+    f'<path d="{fo_muscle}" {THIN}/><path d="{fo_tendon}" {THIN}/>'
+    f'<path d="{fo_out}" fill="none" {STROKE}/>',
+    FB)
 
-# ---------------------------------------------------------------------- hand
-# Back of the right hand toward camera; index + middle fingers extended and
-# resting on the brim, ring + little finger curled, thumb tucked on the
-# upper (q<0) side.
-f = frame(WR, HAND_ANG)
-thumb = capsule(f, 2, 44, -22, 9.5, 7.5, bend=-2)
-ring = path([("M", f(36, 8)), ("C", f(48, 6), f(60, 9), f(61, 15)),
-             ("C", f(62, 22), f(54, 25), f(44, 24)), ("C", f(38, 23), f(34, 20), f(34, 16)), ("Z",)])
-pinky = path([("M", f(32, 18)), ("C", f(42, 18), f(53, 21), f(53, 27)),
-              ("C", f(53, 33), f(45, 34), f(38, 32)), ("C", f(31, 30), f(28, 26), f(29, 22)), ("Z",)])
-middle = capsule(f, 36, TIP_P + 3, 1.5, 8.6, 6.4, bend=2.5)
-index = capsule(f, 36, TIP_P, -13.0, 8.6, 6.4, bend=2.0)
-back = path([
-    ("M", f(-8, -19)),
-    ("C", f(10, -22), f(30, -26), f(44, -23)),
-    ("C", f(51, -21), f(53, -13), f(50, -7)),        # index knuckle
-    ("C", f(54, -3), f(54, 6), f(50, 10)),           # middle knuckle
-    ("C", f(50, 18), f(44, 26), f(35, 28)),
-    ("C", f(22, 29), f(6, 25), f(-8, 20)),
-    ("Z",),
-])
-shade_back = path([("M", f(-8, 13)), ("C", f(8, 18), f(24, 22), f(38, 24)),
-                   ("C", f(26, 27), f(8, 25), f(-8, 20)), ("Z",)])
-shade_fing = path([("M", f(50, 7)), ("C", f(70, 8), f(88, 8), f(TIP_P - 2, 7)),
-                   ("C", f(88, 11), f(70, 11), f(50, 9.5)), ("Z",)])
-lines = "".join(f'<path d="{d}"/>' for d in [
-    path([("M", f(68, -17)), ("C", f(67, -14), f(67, -11), f(68, -9))]),       # index PIP
-    path([("M", f(71, -2)), ("C", f(70, 1), f(70, 4), f(71, 7))]),             # middle PIP
-    path([("M", f(20, -14)), ("C", f(30, -12), f(38, -8), f(44, -6))]),        # tendon
-])
-stroke = f'fill="{SKIN}" stroke="{INK}" stroke-width="{SW}" stroke-linejoin="round"'
+# ---------------------------------------------------------------- hand
+H = hand_pt
+# authored around the brim: front tip (609,228), top edge y~202, underside y~246
+thumb = finger([H(580, 266), H(598, 263), H(614, 258), H(626, 252)], 16 * HK, 12 * HK)
+pinky = finger([H(588, 260), H(600, 268), H(612, 268), H(614, 258)], 12 * HK, 10.5 * HK)
+ring = finger([H(592, 252), H(608, 258), H(620, 256), H(620, 246)], 13 * HK, 11 * HK)
+middle = finger([H(598, 222), H(614, 205), H(636, 200), H(652, 206)], 14.5 * HK, 12 * HK)
+index = finger([H(594, 216), H(608, 199), H(630, 193), H(647, 198)], 14.5 * HK, 12 * HK)
+wt = W0 + unit(FORE_ANG - 90) * 25; wb = W0 + unit(FORE_ANG + 90) * 25
+back = smooth_closed([wt, H(577, 238), H(592, 214), H(604, 206), H(612, 214),
+                      H(616, 232), H(612, 248), H(598, 262), wb], 0.45)
+back_shade = smooth_closed([H(586, 266), H(598, 260), H(610, 250), H(612, 256), H(600, 268), wb], 0.45)
+knuckles = smooth_open([H(596, 212), H(606, 210), H(612, 220)])
+crease1 = smooth_open([H(619, 196), H(621, 201), H(620, 206)])
+crease2 = smooth_open([H(625, 202), H(627, 207), H(625, 212)])
+tendons = smooth_open([H(578, 252), H(590, 236), H(600, 222)])
+HB = [int(v) for v in (H(540, 170)[0], H(540, 170)[1], H(680, 300)[0], H(680, 300)[1])]
+fill = f'fill="{SKIN}" {STROKE}'
 svg("hand",
-    f'<path d="{thumb}" {stroke}/><path d="{pinky}" {stroke}/><path d="{ring}" {stroke}/>'
-    f'<path d="{middle}" {stroke}/><path d="{index}" {stroke}/>'
-    f'<path d="{back}" {stroke}/><path d="{shade_back}" fill="{INK}"/><path d="{shade_fing}" fill="{INK}"/>'
-    f'<g fill="none" stroke="{INK}" stroke-width="{SW_IN}" stroke-linecap="round">{lines}</g>',
-    BOX["hand"])
+    f'<path d="{thumb}" {fill}/><path d="{pinky}" {fill}/><path d="{ring}" {fill}/>'
+    f'<path d="{middle}" {fill}/><path d="{back}" {fill}/><path d="{back_shade}" fill="{INK}"/>'
+    f'<path d="{index}" {fill}/>'
+    f'<g {THIN}><path d="{knuckles}"/><path d="{crease1}"/><path d="{crease2}"/><path d="{tendons}"/></g>',
+    HB)
 
 meta = {
-    "shoulder": P.tolist(), "sleeve_end_rest": SLEEVE_END.tolist(),
-    "rest_angle": REST_ANG, "raised_angle": UP_ANG, "len_sleeve": L_SLEEVE,
-    "skin_ext": SKIN_EXT, "len_upper": L_UP, "len_fore": L_FORE,
-    "elbow_raised": E.tolist(), "wrist_raised": WR.tolist(), "grip": GRIP.tolist(),
+    "shoulder": P.tolist(), "len_upper": L_UP, "sleeve_end": SLEEVE_END,
+    "rest_angle": REST_ANG, "rest_scale": REST_SCALE,
+    "raised_angle": UP_ANG, "len_fore": L_FORE,
+    "elbow_raised": E0.tolist(), "wrist_raised": W0.tolist(), "pinch": C.tolist(),
     "fore_angle_raised": FORE_ANG, "hand_angle_raised": HAND_ANG,
-    "bbox": BOX,
+    "bbox": {"sleeve": SB, "forearm": FB, "hand": HB},
+    "sleeve_axis_angle": 0.0,
 }
 json.dump(meta, open(os.path.join(ROOT, "build/arm.json"), "w"), indent=1)
 print({k: (round(v, 2) if isinstance(v, float) else v) for k, v in meta.items() if k != "bbox"})

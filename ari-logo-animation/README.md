@@ -1,4 +1,4 @@
-# ARI Painting & Construction Corp. — 3D Logo Animation
+# ARI Painting & Construction Corp. — 3D Logo Animation (v2)
 
 A 9-second, 1920×1080, 30 fps cinematic logo animation. It was built in Blender 5.2 (Cycles) from the supplied logo artwork and storyboard.
 
@@ -6,34 +6,43 @@ A 9-second, 1920×1080, 30 fps cinematic logo animation. It was built in Blender
 
 | File | What it is |
 |---|---|
-| `ari-logo-animation_1080p_silent.mp4` | H.264 High, 1920×1080, 30 fps, BT.709, no audio |
-| `ari-logo-animation_1080p_sfx.mp4` | Same picture with directional motion SFX (AAC 48 kHz stereo) |
-| `ari-logo-animation_1080p_alpha.webm` | VP9 with an alpha channel: logo + soft shadows on transparency |
-| `ari-logo-animation_1080p_alpha_prores4444.mov` | ProRes 4444 with alpha, for editors. Only present if the file is under GitHub's size limit (it can be regenerated with `tools/encode.sh`) |
-| `ari-logo-final-frame.png` | Final brand frame (opaque) |
-| `ari-logo-final-frame-transparent.png` | Final brand frame with alpha |
+| `ari-logo-animation_1080p_sfx.mp4` | H.264 High, 1920×1080, 30 fps, BT.709, with directional motion SFX (AAC 48 kHz stereo) |
+| `ari-logo-animation_1080p_silent.mp4` | Same picture, no audio track |
+| `ari-logo-final-frame.png` | Final brand frame, 1920×1080 |
 | `frames-overview.jpg` | One frame per second, for review |
+| `v1/` | The previous approved-direction version (archived) |
 
 ## Sequence
 
 | Time | Scene |
 |---|---|
-| 0–1 s | Macro glide past the bevelled A flourish. The other letter parts float at different depths, out of focus. |
-| 1–2 s | Five letter parts (A flourish, A leg, A thick stroke and tail, r, i) move into place on staggered, decelerating paths with no bounce. The camera pulls back to a perspective angle. |
-| 2–3 s | The subtitle rises in word by word. The camera eases to a front three-quarter view. |
-| 3–4 s | The worker hinges up from behind the lettering, with follow-through on the head and hat. The camera tilts up. |
-| 4–5 s | He settles with breathing idle and an anticipation glance. The camera is slightly elevated and front-facing. |
-| 5–6 s | **Hard-hat tip.** The arm rises (shoulder, elbow and wrist on a 2-bone IK). Two fingers contact the brim and tip the hat forward about 7° with a small nod. |
-| 6–7 s | The hat returns, the hand releases and lowers back to the original pose, and the camera dollies back. |
-| 7–9 s | Full logo reveal, then a near-stationary hold on the original composition. |
+| 0–2.3 s | Five letter parts float apart in space: A flourish, A leg, A thick stroke and tail, r, i. Each travels a curved path with its own 3D rotation and depth move, arriving staggered and decelerating precisely into place. The camera holds a wide enough view to read the parts, with a gentle orbit and dolly. |
+| 2.4–3.0 s | The subtitle rises in word by word, below the lettering. |
+| 3.0–4.0 s | The worker rises from behind the finished lettering, occluded by the letters, with head and hat follow-through. The camera tilts up. |
+| 4.0–5.0 s | He settles with a breathing idle. The camera frames him large and slightly elevated. |
+| 5.0–6.0 s | **Hard-hat tip.** The shoulder prepares, the elbow bends and the forearm rises to the brim. The wrist turns so the fingers close over the brim, with the thumb underneath. The hat tips about 8° forward on the head while the head nods about 3°, about 11° in total. |
+| 6.0–7.0 s | The hat returns, the hand releases, the arm lowers and the camera dollies back. |
+| 7.6–9.0 s | Near-stationary hold on the complete logo. It fills about 39% of the frame width and is centred. |
+
+## Revision summary (v1 → v2)
+
+| Issue | Root cause in v1 | Fix |
+|---|---|---|
+| Arm looked disconnected, white tube, hat barely tipped | The raised arm was the original foreshortened sleeve rotated about 100°, attached to a long flat white forearm. The hat tilted 7° with the fingertips only touching. | The arm was redrawn as one limb of the uniform: a yellow sleeve with the black shadowed shoulder, fold strokes, hem and cuff tab, and a shaded forearm emerging from the cuff. The hand grips the brim. Two-bone IK solves the elbow from the wrist. During contact the hand is rigidly attached to the hat, so there is no sliding. The tip is about 11°. The original sleeve pixels are used at rest and dissolve into the drawn sleeve in the first 3 frames of motion, so the logo pose stays pixel-identical. |
+| Subtitle overlapped the swash | It used the original logo's position, which crosses the tail. | Moved 30 px (logo scale) below the lowest point of the swash and centred on the lettering. Still black, Montserrat ExtraBold. The knock-out backer was removed. |
+| Assembly not readable | Macro camera 0.4 m from a single part | Separated parts are framed together. Each has a quadratic-Bézier path with a mid-flight arc, 3D rotation that settles slightly before the position, and staggered arrivals 0.14 s apart. The crossing of the A leg and flourish was rebuilt geometrically so each part is a clean shape in flight. |
+| Entrance abrupt, opacity-led | Hinge pop-up plus fade | Pure vertical rise of 0.62 m from behind the letters, with real occlusion and a slight lean that straightens. The only fade is 0.14 s while he is still behind the lettering. |
+| Final logo too small | Camera 3.9 m away with the subtitle inside the tail | The subtitle now sits below. The camera stops at 3.68 m, so the logo is about 39% of frame width; the composition's height limits it. |
+| Flat depth | 40 mm letters, wall 1.1 m back | 50 mm extrusion with a 6-segment bevel, the backdrop 0.72 m behind for readable soft contact shadows, and the worker 65 mm behind the letters (letter shadows fall on him; parallax). |
+| Camera | Catmull-Rom on raw positions, with a fast macro-to-wide pull | A spherical rig (target, azimuth, elevation, distance) with smooth tangents. Rest-to-rest moves use quintic easing, so acceleration is continuous at both ends. |
+| SFX | Assembly passes overlapped heavily | Air passes cover only the fast part of each flight, and the clicks are timed from the actual easing curve. Distinct tonal ticks mark the subtitle. Plastic taps mark brim contact and release. The track is silent from 7.0 s. |
 
 ## Fidelity notes
 
-- **"Ari" lettering** is vectorised directly from the supplied logo (`tools/segment_letters.py`, potrace at 3×) and is not substituted with a font. The A is split along its natural stroke junctions so the parts can assemble. Where the parts meet, they overlap and tuck under one another.
-- **Swash tail under the subtitle:** in the original artwork, the subtitle's white halo covers part of the tail. That hidden section was rebuilt by fitting its edges from above and below the subtitle band.
-- **Subtitle:** typeset (not generated) in Montserrat ExtraBold, which is the closest match to the logo, and scaled to the original width. The text is exactly `Painting & Construction Corp.`, including the period the brief asks for (the source logo has none). It is black, with a light knock-out backer like the original's halo, so it stays legible where it crosses the black swash.
-- **Worker:** the original illustration's pixels, cleaned to the logo palette and cut into rig layers (torso, head, hat, sleeve). Hidden areas were painted in so motion never reveals holes: hair under the hat, the neck under the collar, and the side of the chest under the sleeve. Each layer is a 4 mm printed cut-out with outline-coloured edges.
-- **Arm and hand** are not in the original logo. They are drawn as vector art in the same ink style (`tools/draw_arm.py`): a white skin tone, heavy black outline and graphic black shading. The hand has two extended fingers on the brim, with the ring and little fingers curled and the thumb tucked. They are rigged rather than warped. At rest the forearm is hidden behind the torso, so the first and last frames match the original logo exactly.
+- **"Ari" lettering** is vectorised directly from the supplied logo (`tools/segment_letters.py`); no font is substituted. The assembled parts match the original letter strokes with IoU 0.983; the differences are anti-aliased edges.
+- **Swash tail:** the section hidden under the subtitle in the original artwork was rebuilt by fitting the stroke's edges from above and below.
+- **Subtitle:** reads exactly `Painting & Construction Corp.` (with the period the brief specifies), in black Montserrat ExtraBold. Words are laid out with Blender's own glyph metrics.
+- **Worker:** the original illustration, cleaned to the logo palette and cut into rig layers. Hidden areas were painted in: hair under the hat, the neck under the collar, and the side of the chest under the sleeve. The pose before 4.9 s and after 7.25 s is pixel-identical to the logo.
 
 ## Rebuilding
 
@@ -42,12 +51,11 @@ Requirements: Python 3.13, `pip install bpy==5.2.3 opencv-python-headless potrac
 ```bash
 python3 tools/segment_letters.py        # -> build/letters.json
 python3 tools/segment_worker.py         # -> build/layers/{torso,head,hat,uparm}.png, build/rig.json
-python3 tools/draw_arm.py               # -> build/svg/*.svg, build/arm.json
-node tools/rasterize_svg.cjs 2          # -> build/layers/{upskin,forearm,hand}.png
-python3 tools/preview_rig.py out.png 0 5.6 6.0   # optional 2D check of the gesture
+python3 tools/draw_arm.py               # -> build/svg/{sleeve,forearm,hand}.svg, build/arm.json
+node tools/rasterize_svg.cjs 2          # -> build/layers/{sleeve,forearm,hand}.png
+python3 tools/preview_rig.py out.png 0 5.5 5.9   # optional 2D check of the gesture
 python3 blender/build_scene.py          # -> blender/ari_logo_animation.blend (editable)
-python3 blender/build_scene.py --render build/frames_main --samples 12
-python3 blender/build_scene.py --render build/frames_alpha --samples 8 --alpha
+tools/render_all.sh                     # -> build/frames_main (Cycles, 12 spp + OIDN)
 python3 tools/make_sfx.py build/audio/sfx.wav
 tools/encode.sh
 ```
@@ -61,7 +69,7 @@ tools/encode.sh
 - `Key_Softbox`, `Fill_Softbox`, `Rim_Strip` and `Top_Bounce` area lights
 - `Cyclorama` set
 
-The animation is baked per frame from `blender/build_scene.py` and `tools/rig.py`. Change timing or poses there, then rebuild.
+The animation is baked per frame from `blender/build_scene.py` (assembly, entrance, camera) and `tools/rig.py` (arm IK, hat tip). Change timing or poses there, then rebuild. A transparent version can still be rendered with `--alpha` (shadow catcher).
 
 ## Structure
 
@@ -71,5 +79,5 @@ assets/fonts/    Montserrat ExtraBold (SIL OFL)
 tools/           segmentation, vector arm, rig + performance, SFX, encoding
 blender/         scene builder + saved .blend
 build/           generated intermediates (layers, vectors, rig data, audio)
-output/          final deliverables
+output/          final deliverables (v1 archived in output/v1)
 ```

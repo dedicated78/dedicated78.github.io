@@ -102,19 +102,38 @@ for k in range(1, n2):
     print("comp", k, st2[k], file=sys.stderr)
     if k != curl_id and 900 < y0 + h0 / 2 < 1060 and x0 > 430 and a0 > 400 and h0 < 140:
         fl_only |= lab2 == k
-# flourish band across the leg: interpolate its edges from both sides
+# --- crossing: rebuild both strokes geometrically inside a small zone ------
+# Outside the zone the pixels are split by a generous band around the fitted
+# leg; inside it the leg is its exact straight band and the flourish a band
+# interpolated from its edges on either side, so neither piece has nubs.
+wide_leg = (xx >= xl - 8) & (xx <= xr + 8) & (yy > 700) & (yy < 1150)
 def fl_edges(xc):
     rr = runs(fl_only[850:1000, int(round(xc))])
     a0, a1 = min(rr, key=lambda t: abs((t[0] + t[1]) / 2 - 80))
     return a0 + 850, a1 + 850 - 1
 yc = 925
-xa = np.polyval(pl, yc) - 6; xb = np.polyval(pr, yc) + 6
-ta, ba = fl_edges(xa); tb, bb = fl_edges(xb)
-poly = np.array([[xa, ta], [xb, tb], [xb, bb], [xa, ba]], np.float32)
-cross = np.zeros((H, W), np.uint8)
-cv2.fillPoly(cross, [np.round(poly).astype(np.int32)], 1)
-flourish = fl_only | (cross.astype(bool) & legband) | (strip & (yy > 960) & (yy < 1070))
-leg = (core_left & ~fl_only) | (strip & (yy < 940))
+ta, ba = fl_edges(float(np.polyval(pl, yc)) - 12); tb, bb = fl_edges(float(np.polyval(pr, yc)) + 12)
+y0 = int(min(ta, tb) - 18); y1 = int(max(ba, bb) + 18)
+xa = float(np.polyval(pl, y1)) - 8; xb = float(np.polyval(pr, y0)) + 8
+cz = (yy >= y0) & (yy <= y1) & (xx >= xa) & (xx <= xb)
+# flourish: its real edges at the zone's left/right columns, bridged straight
+ta, ba = fl_edges(xa - 1); tb, bb = fl_edges(xb + 1)
+poly = np.array([[xa, ta], [xb, tb], [xb, bb + 1], [xa, ba + 1]], np.float32)
+# leg: its real edges at the zone's top/bottom rows, bridged straight
+def leg_edges(y):
+    lo, hi = int(np.polyval(pl, y)) - 10, int(np.polyval(pr, y)) + 10
+    rr = runs(core_left[y, lo:hi]); a0, a1 = max(rr, key=lambda t: t[1] - t[0])
+    return lo + a0, lo + a1
+l0, r0 = leg_edges(y0 - 1); l1, r1 = leg_edges(y1 + 1)
+lpoly = np.array([[l0, y0 - 1], [r0, y0 - 1], [r1, y1 + 1], [l1, y1 + 1]], np.float32)
+def fill(pg):
+    m = np.zeros((H, W), np.uint8); cv2.fillPoly(m, [np.round(pg).astype(np.int32)], 1); return m.astype(bool)
+fl_out = fl_only & ~wide_leg & ~cz
+nf, labf, stf, _ = cv2.connectedComponentsWithStats(fl_out.astype(np.uint8), 8)
+fl_out = np.isin(labf, [k for k in range(1, nf) if stf[k, 4] > 300])
+flourish = fl_out | (fill(poly) & cz) | (strip & (yy > 960) & (yy < 1070))
+leg = (core_left & wide_leg & ~cz & ~fl_out) | (fill(lpoly) & cz) | (strip & (yy < 940))
+leg &= (yy > 670) & (yy < 1150)
 print("leg fit", pl, pr, "crossing", poly.tolist(), file=sys.stderr)
 
 pieces = {

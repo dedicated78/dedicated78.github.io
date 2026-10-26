@@ -36,5 +36,5 @@ if [ -d build/frames_alpha ] && [ -f build/frames_alpha/f0270.png ]; then
 fi
 
 # 5) one-frame-per-second overview sheet for review
-python3 tools/contact.py "$OUT/frames-overview.jpg" build/frames_main 16 46 76 106 136 166 196 226 270
+python3 tools/contact.py "$OUT/frames-overview.jpg" build/frames_main 1 31 61 91 121 166 178 211 270
 ls -la "$OUT"

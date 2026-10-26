@@ -106,39 +106,47 @@ def low_settle(gain=1.0):
 
 
 # ---------------------------------------------------------------- cues
-# S1: camera glide past the flourish - barely-there air, left -> right
-g = whoosh(1.15, 220, 520, peak=0.55, q=0.9, air=0.6)
-place(g, 0.0, np.linspace(-0.6, 0.5, len(g)), 0.16)
+# S1: suspended parts, camera orbit - barely-there air, left -> right
+g = whoosh(1.0, 200, 420, peak=0.6, q=0.9, air=0.6)
+place(g, 0.0, np.linspace(-0.5, 0.3, len(g)), 0.08)
 
-# S2: each letter part travels from its scatter position into place
+# S2: each letter part travels on its own path into place. The air pass
+# covers the fast part of the flight (panned along the part's direction);
+# a soft mechanical click marks the moment it seats.
+def landing(name):
+    t0, t1 = B.ASSEMBLY[name]
+    for x in np.linspace(0, 1, 400):
+        if B.assembly_k(x) >= 0.985:
+            return t0 + (t1 - t0) * x
+    return t1
+
 for name, (t0, t1) in B.ASSEMBLY.items():
     off = B.SCATTER[name][0]
-    pan0 = float(np.clip(off.x * 1.6, -0.85, 0.85))
-    dur = t1 - t0
-    w = whoosh(dur + 0.05, 420 + 260 * abs(off.y), 1500 + 500 * (off.z > 0), peak=0.58)
-    place(w, t0, np.linspace(pan0, pan0 * 0.15, len(w)), 0.20)
-    # placement: lands when the decelerating part is ~97% home
-    land = t0 + dur * 0.86
-    place(click(1.0, bright=0.9 + 0.05 * len(name)), land, pan0 * 0.15, 0.42)
+    pan0 = float(np.clip(off.x * 2.2, -0.85, 0.85))
+    land = landing(name)
+    dur = (land - t0) * 0.92
+    w = whoosh(dur, 380 + 300 * abs(off.y), 1300 + 400 * (off.z > 0), peak=0.45)
+    place(w, t0, np.linspace(pan0, pan0 * 0.2, len(w)), 0.15)
+    place(click(1.0, bright=0.9 + 0.05 * len(name)), land, pan0 * 0.15, 0.40)
 
 # S3: subtitle words - refined tonal ticks, stepping left to right
 for k in range(4):
-    t = B.SUB_T0 + k * B.SUB_STAGGER + 0.06
-    place(text_tick(1.0, pitch=1.0 + 0.04 * k), t, -0.35 + 0.23 * k, 0.17)
+    t = B.SUB_T0 + k * B.SUB_STAGGER + 0.05
+    place(text_tick(1.0, pitch=1.0 + 0.04 * k), t, -0.35 + 0.23 * k, 0.16)
 
-# S4: worker rises from behind the lettering
-w = whoosh(B.WORKER_T1 - B.WORKER_T0 + 0.1, 160, 900, peak=0.7, q=1.1, air=0.5)
-place(w, B.WORKER_T0, 0.05, 0.40)
-place(low_settle(), B.WORKER_T1 - 0.06, 0.05, 0.30)
-place(click(0.6, bright=0.8), B.WORKER_T1 - 0.05, 0.05, 0.12)
+# S4: worker rises from behind the lettering - soft upward air, low settle
+w = whoosh(B.WORKER_T1 - B.WORKER_T0, 150, 820, peak=0.42, q=1.1, air=0.5)
+place(w, B.WORKER_T0, 0.08, 0.34)
+place(low_settle(), B.WORKER_T1 - 0.18, 0.08, 0.24)
 
-# S6/S7: hat tip - arm raise air, contact tap, release tap, arm lowers
-w = whoosh(rig.T_CONTACT - rig.T_RAISE0 + 0.05, 500, 1300, peak=0.6, q=1.6, air=0.2)
-place(w, rig.T_RAISE0, np.linspace(-0.25, -0.1, len(w)), 0.13)
-place(plastic_tap(), rig.T_CONTACT - 0.01, -0.1, 0.22)
-place(plastic_tap(0.8), rig.T_UNTIP1 - 0.02, -0.1, 0.14)
-w = whoosh(rig.T_LOWER1 - rig.T_RELEASE, 1100, 420, peak=0.4, q=1.6, air=0.2)
-place(w, rig.T_RELEASE, np.linspace(-0.1, -0.25, len(w)), 0.10)
+# S6/S7: hat tip - arm raise air, brim contact, tip, release, arm lowers
+w = whoosh(rig.T_CONTACT - rig.T_RAISE0, 480, 1250, peak=0.6, q=1.6, air=0.2)
+place(w, rig.T_RAISE0, np.linspace(-0.3, -0.12, len(w)), 0.11)
+place(plastic_tap(), rig.T_CONTACT - 0.01, -0.12, 0.22)
+place(plastic_tap(0.7), rig.T_UNTIP1 - 0.02, -0.12, 0.13)
+w = whoosh(rig.T_LOWER1 - rig.T_RELEASE, 1100, 420, peak=0.35, q=1.6, air=0.2)
+place(w, rig.T_RELEASE, np.linspace(-0.12, -0.3, len(w)), 0.08)
+# 7.0 s onward: silence for the clean final hold
 
 # ---------------------------------------------------------------- master
 def small_room(x):

@@ -1,4 +1,4 @@
-"""Worker puppet rig + performance (the hard-hat tip).
+"""Worker puppet rig + performance (the hard-hat tip), v2.
 
 Shared by the 2D preview (tools/preview_rig.py) and the Blender scene
 (blender/build_scene.py) so both show exactly the same motion.
@@ -6,8 +6,15 @@ Shared by the 2D preview (tools/preview_rig.py) and the Blender scene
 All coordinates are logo pixels, screen orientation (x right, y down);
 angles are screen degrees (positive = clockwise on screen).
 
-pose(t) returns, for every sprite, a 2D rigid transform that maps the sprite
-as authored (its "bind" pose) to its current pose:  p' = R(angle) (p - pivot) + pivot + offset
+pose(t) returns, for every sprite, the transform that maps the sprite as
+authored to its current pose:
+    p' = R(angle) (S(sx) (p - pivot)) + pivot + offset
+where S scales along the sprite's authored x axis (used for the sleeve's
+foreshortening; 1.0 for everything else).
+
+Arm chain: shoulder (P) -> elbow -> wrist, two-bone IK on the wrist. While
+the fingers hold the brim, the hand is rigidly attached to the hard hat, so
+contact is exact (no sliding) and the wrist turns with the hat.
 """
 import json, math, os
 import numpy as np
@@ -20,20 +27,17 @@ P = np.array(_arm["shoulder"])
 HEAD_PIV = np.array(_rig["pivots"]["head"])
 HAT_PIV = np.array(_rig["pivots"]["hat"])
 REST_ANG = _arm["rest_angle"]
+REST_SCALE = _arm["rest_scale"]
 UP_ANG = _arm["raised_angle"]
-L_SLEEVE = _arm["len_sleeve"]
-SKIN_EXT = _arm["skin_ext"]
+L_UP = _arm["len_upper"]
 L_FORE = _arm["len_fore"]
 E_RAISED = np.array(_arm["elbow_raised"])
 W_RAISED = np.array(_arm["wrist_raised"])
-GRIP = np.array(_arm["grip"])
 FORE_RAISED = _arm["fore_angle_raised"]
 HAND_RAISED = _arm["hand_angle_raised"]
-L_GRIP = float(np.linalg.norm(GRIP - E_RAISED))       # elbow -> grip (rigid w/ hand)
-HAND_OFS = HAND_RAISED - FORE_RAISED
+HAND_REL = HAND_RAISED - FORE_RAISED          # wrist bend at the grip
 
-FOREARM_REST = -8.0   # forearm angle at rest: pointing into the body, hidden behind torso
-EXT_REST = -1.5       # elbow pulled up inside the sleeve at rest
+FOREARM_REST = -8.0    # at rest the forearm points into the body, hidden by the torso
 
 
 def unit(deg):
@@ -47,43 +51,40 @@ def rot(p, piv, deg):
     return piv + np.array([c * d[0] - s * d[1], s * d[0] + c * d[1]])
 
 
-def ik(target, ext):
-    """two-bone IK, elbow bending outward (to screen-left)."""
-    L1 = L_SLEEVE + ext * SKIN_EXT
-    L2 = L_GRIP
-    d = target - P
-    D = min(np.linalg.norm(d), L1 + L2 - 1e-3)
+def ik(target, L1, L2=L_FORE):
+    """two-bone IK on the wrist; the elbow bends outward (screen-left)."""
+    d = np.asarray(target, float) - P
+    D = min(float(np.linalg.norm(d)), L1 + L2 - 1e-3)
     base = math.degrees(math.atan2(d[1], d[0]))
-    cos_a = (L1 * L1 + D * D - L2 * L2) / (2 * L1 * D)
-    a = math.degrees(math.acos(max(-1, min(1, cos_a))))
-    up = base - a                                   # elbow to the left of the line
+    a = math.degrees(math.acos(max(-1, min(1, (L1 * L1 + D * D - L2 * L2) / (2 * L1 * D)))))
+    up = base - a
     E = P + unit(up) * L1
-    v = target - E
-    fore = math.degrees(math.atan2(v[1], v[0]))
-    return up % 360, fore
+    v = np.asarray(target, float) - E
+    return up % 360, math.degrees(math.atan2(v[1], v[0]))
 
 
 # ------------------------------------------------------------------ easing
 def smoothstep(x):
     x = min(1, max(0, x)); return x * x * (3 - 2 * x)
 
+
 def ease_io(x, p=2.6):
     x = min(1, max(0, x))
     return 0.5 * (2 * x) ** p if x < 0.5 else 1 - 0.5 * (2 * (1 - x)) ** p
 
+
 def seg(t, t0, t1):
     return min(1, max(0, (t - t0) / (t1 - t0)))
 
-def lerp(a, b, x):
-    return a + (b - a) * x
 
 def unwrap(ref, ang):
     while ang - ref > 180: ang -= 360
     while ang - ref < -180: ang += 360
     return ang
 
+
 def hermite_keys(keys, t):
-    """keys: [(time, value)], monotone cubic (Catmull-Rom with zero end tangents)."""
+    """keys: [(time, value)], Catmull-Rom with zero tangents at the ends."""
     ts = [k[0] for k in keys]; vs = [np.asarray(k[1], float) for k in keys]
     if t <= ts[0]: return vs[0]
     if t >= ts[-1]: return vs[-1]
@@ -99,98 +100,116 @@ def hermite_keys(keys, t):
 
 
 # --------------------------------------------------------------- timeline
-# Times in seconds (30 fps master). Scene 06 = 5-6 s, scene 07 = 6-7 s.
-T_RAISE0, T_CONTACT = 5.00, 5.48
-T_TIP0, T_TIP1 = 5.56, 5.86
-T_UNTIP0, T_UNTIP1 = 6.06, 6.34
-T_RELEASE, T_LOWER1 = 6.42, 6.98
-HAT_TIP = -7.0         # brim dips forward
-HEAD_NOD = -2.2
+# Scene 06 = 5-6 s (gesture), scene 07 = 6-7 s (return).
+T_ANTIC = 4.86            # shoulder prepares
+T_RAISE0, T_CONTACT = 5.02, 5.50
+T_TIP0, T_TIP1 = 5.60, 5.94
+T_UNTIP0, T_UNTIP1 = 6.12, 6.42
+T_RELEASE, T_LOWER1 = 6.46, 7.02
+XFADE = 0.10              # original sleeve <-> drawn sleeve dissolve (s)
+HAT_TIP = -8.0            # hat rotates forward on the head (brim down)
+HEAD_NOD = -3.0           # head follows: ~11 deg total visible tip
 
 
 def hat_angle(t):
-    a = HAT_TIP * ease_io(seg(t, T_TIP0, T_TIP1))
-    a -= HAT_TIP * ease_io(seg(t, T_UNTIP0, T_UNTIP1))
-    # tiny settle after release
-    a += 0.6 * math.sin(math.pi * seg(t, T_UNTIP1, T_UNTIP1 + 0.3)) * (t > T_UNTIP1)
+    """hat rotation relative to the head."""
+    a = HAT_TIP * ease_io(seg(t, T_TIP0, T_TIP1), 2.2)
+    a -= HAT_TIP * ease_io(seg(t, T_UNTIP0, T_UNTIP1), 2.2)
     return a
 
 
 def head_angle(t):
-    # breathing-scale idle + nod with the tip + small turn back after
-    a = HEAD_NOD * ease_io(seg(t, T_TIP0 - 0.04, T_TIP1 + 0.04))
-    a -= HEAD_NOD * ease_io(seg(t, T_UNTIP0, T_UNTIP1 + 0.08))
-    a += -0.8 * math.sin(math.pi * seg(t, 4.55, 5.05))               # anticipation glance
-    a += 0.9 * math.sin(math.pi * seg(t, T_UNTIP1, T_UNTIP1 + 0.7))  # confident lift
+    a = HEAD_NOD * ease_io(seg(t, T_TIP0 + 0.04, T_TIP1 + 0.06), 2.2)
+    a -= HEAD_NOD * ease_io(seg(t, T_UNTIP0 + 0.03, T_UNTIP1 + 0.10), 2.2)
+    a += -0.9 * math.sin(math.pi * seg(t, T_ANTIC - 0.2, T_RAISE0 + 0.15))   # anticipation glance
+    a += 1.0 * math.sin(math.pi * seg(t, T_UNTIP1, T_UNTIP1 + 0.75))          # confident lift
     return a
 
 
-def grip_point(t):
-    """brim pinch point in head-local (unrotated) space, rotated with hat+head."""
-    g = rot(GRIP, HAT_PIV, hat_angle(t))
-    return rot(g, HEAD_PIV, head_angle(t))
+def hat_world(p, t):
+    """map a point fixed to the hat (authored space) into the current pose."""
+    return rot(rot(p, HAT_PIV, hat_angle(t)), HEAD_PIV, head_angle(t))
+
+
+def grip_target(t):
+    """wrist position + hand angle while holding the brim."""
+    return hat_world(W_RAISED, t), HAND_RAISED + hat_angle(t) + head_angle(t)
+
+
+def _keys_pose(keys, x):
+    v = hermite_keys(keys, x)
+    return float(v[0]), float(v[1]), float(v[2]), float(v[3])
 
 
 def arm_pose(t):
-    """returns (upper_arm_angle, ext, forearm_angle)."""
-    rest = (REST_ANG, EXT_REST, FOREARM_REST)
-    if t <= T_RAISE0 or t >= T_LOWER1:
+    """(upper-arm angle, foreshortening scale, forearm angle, hand angle)."""
+    rest = (REST_ANG, REST_SCALE, FOREARM_REST, FOREARM_REST + HAND_REL)
+    if t < T_ANTIC or t >= T_LOWER1:
         return rest
-    pre = GRIP + np.array([-16.0, 16.0])          # approach point just off the brim
-    up_c, fo_c = ik(grip_point(t), 1.0)
+    if t < T_RAISE0:
+        # preparation: the shoulder settles back a touch before lifting
+        k = math.sin(math.pi * seg(t, T_ANTIC, T_RAISE0 + 0.06))
+        return (REST_ANG - 3.0 * k, REST_SCALE, FOREARM_REST, FOREARM_REST + HAND_REL)
     if t < T_CONTACT:
-        x = seg(t, T_RAISE0, T_CONTACT)
-        up_p, fo_p = ik(pre, 0.95)
+        x = ease_io(seg(t, T_RAISE0, T_CONTACT), 1.8)
+        wt, ht = grip_target(T_CONTACT)
+        up_c, fo_c = ik(wt, L_UP)
+        up_p, fo_p = ik(W_RAISED + np.array([-20.0, 26.0]), L_UP * 0.97)
+        k0 = REST_ANG - 3.0 * math.sin(math.pi * (T_RAISE0 - T_ANTIC) / (T_RAISE0 + 0.06 - T_ANTIC))
         keys = [
-            (0.00, [REST_ANG, EXT_REST, FOREARM_REST]),
-            (0.30, [REST_ANG + 30, 0.35, -48.0]),
-            (0.72, [unwrap(REST_ANG, up_p), 0.95, unwrap(-48, fo_p)]),
-            (1.00, [unwrap(REST_ANG, up_c), 1.0, unwrap(-48, fo_c)]),
+            (0.00, [k0, REST_SCALE, FOREARM_REST, FOREARM_REST + HAND_REL]),
+            (0.30, [REST_ANG + 52, 0.80, -62.0, -62.0 + 8]),
+            (0.74, [unwrap(REST_ANG, up_p), 0.97, unwrap(-62, fo_p), unwrap(-62, fo_p) + HAND_REL + 14]),
+            (1.00, [unwrap(REST_ANG, up_c), 1.00, unwrap(-62, fo_c), unwrap(-62, ht)]),
         ]
-        v = hermite_keys(keys, ease_io(x, 1.9))
-        return float(v[0]), float(v[1]), float(v[2])
+        return _keys_pose(keys, x)
     if t < T_RELEASE:
-        return up_c, 1.0, fo_c
-    # release: hand lifts off the brim, then the arm lowers back into rest
-    x = seg(t, T_RELEASE, T_LOWER1)
-    off = GRIP + np.array([-20.0, 22.0])
-    up_o, fo_o = ik(off, 0.95)
-    up_r, fo_r = ik(grip_point(T_RELEASE), 1.0)
+        wt, ht = grip_target(t)
+        up, fo = ik(wt, L_UP)
+        return up, 1.0, fo, ht
+    x = ease_io(seg(t, T_RELEASE, T_LOWER1), 1.7)
+    wt, ht = grip_target(T_RELEASE)
+    up_r, fo_r = ik(wt, L_UP)
+    up_o, fo_o = ik(W_RAISED + np.array([-24.0, 30.0]), L_UP * 0.97)
     keys = [
-        (0.00, [up_r, 1.0, fo_r]),
-        (0.18, [unwrap(up_r, up_o), 0.95, unwrap(fo_r, fo_o)]),
-        (0.62, [unwrap(up_r, REST_ANG + 34), 0.35, -50.0]),
-        (1.00, [unwrap(up_r, REST_ANG), EXT_REST, FOREARM_REST]),
+        (0.00, [up_r, 1.00, fo_r, ht]),
+        (0.20, [unwrap(up_r, up_o), 0.97, unwrap(fo_r, fo_o), unwrap(fo_r, fo_o) + HAND_REL + 16]),
+        (0.64, [unwrap(up_r, REST_ANG + 48), 0.80, -60.0, -60.0 + 8]),
+        (1.00, [unwrap(up_r, REST_ANG), REST_SCALE, FOREARM_REST, FOREARM_REST + HAND_REL]),
     ]
-    v = hermite_keys(keys, ease_io(x, 1.7))
-    return float(v[0]), float(v[1]), float(v[2])
+    return _keys_pose(keys, x)
+
+
+def sleeve_mix(t):
+    """0 = original foreshortened sleeve pixels, 1 = drawn raised sleeve."""
+    return seg(t, T_RAISE0, T_RAISE0 + XFADE) * (1 - seg(t, T_LOWER1 - XFADE, T_LOWER1))
 
 
 def pose(t):
-    """sprite transforms at time t: {name: (angle_deg, pivot(xy), offset(xy))}.
-
-    The arm is solved in the torso frame; head/hat chain rotates about the neck.
-    """
-    up, ext, fo = arm_pose(t)
+    """sprite transforms at time t: {name: (angle_deg, pivot, offset, sx)}."""
+    up, s, fo, hand = arm_pose(t)
     hd = head_angle(t); ht = hat_angle(t)
+    z = np.zeros(2)
     out = {}
-    out["torso"] = (0.0, P, np.zeros(2))
-    out["head"] = (hd, HEAD_PIV, np.zeros(2))
-    # hat: rotate about its pivot, then about the neck (compose)
+    out["torso"] = (0.0, P, z, 1.0)
+    out["head"] = (hd, HEAD_PIV, z, 1.0)
     hp = rot(HAT_PIV, HEAD_PIV, hd)
-    out["hat"] = (hd + ht, HAT_PIV, hp - HAT_PIV)
-    out["uparm"] = (up - REST_ANG, P, np.zeros(2))
-    # upskin authored at raised pose with ext=1
-    shift = unit(up) * (ext - 1.0) * SKIN_EXT
-    out["upskin"] = (up - UP_ANG, P, shift)
-    E = P + unit(up) * (L_SLEEVE + ext * SKIN_EXT)
-    out["forearm"] = (fo - FORE_RAISED, E_RAISED, E - E_RAISED)
+    out["hat"] = (hd + ht, HAT_PIV, hp - HAT_PIV, 1.0)
+    out["uparm"] = (up - REST_ANG, P, z, 1.0)          # original pixels (rest art)
+    out["sleeve"] = (up, P, z, s)                      # drawn sleeve, authored along +x
+    E = P + unit(up) * L_UP * s
+    out["forearm"] = (fo - FORE_RAISED, E_RAISED, E - E_RAISED, 1.0)
     Wr = E + unit(fo) * L_FORE
-    hand = fo + HAND_OFS
-    out["hand"] = (hand - HAND_RAISED, W_RAISED, Wr - W_RAISED)
+    out["hand"] = (hand - HAND_RAISED, W_RAISED, Wr - W_RAISED, 1.0)
     return out
 
 
+def fades(t):
+    m = sleeve_mix(t)
+    return {"uparm": 1.0 - m, "sleeve": m}
+
+
 def apply(tf, p):
-    ang, piv, off = tf
-    return rot(p, piv, ang) + off
+    ang, piv, off, sx = tf
+    d = np.asarray(p, float) - piv
+    return rot(piv + np.array([d[0] * sx, d[1]]), piv, ang) + off
