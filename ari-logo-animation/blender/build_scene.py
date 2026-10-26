@@ -506,7 +506,7 @@ def animate(sc, pieces, subs, root, sprites, cam, tgt):
         pose = rig.pose(t); fd = rig.fades(t)
         hd_ft, hat_ft = follow_through(t) if t < 4.8 else (0.0, 0.0)
         br = idle(t)
-        appear = clamp01((t - (WORKER_T0 - 0.14)) / 0.14)   # while still hidden behind the letters
+        appear = clamp01((t - (WORKER_T0 - 0.03)) / 0.07)   # ~2 frames, as the rise begins behind the letters
         for n, ob in sprites.items():
             ang2, piv, off, sx = pose[n]
             extra = 0.0
