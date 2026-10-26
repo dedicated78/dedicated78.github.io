@@ -51,22 +51,25 @@ Reference handling: `assets/source/reference-hand-gesture.png` was used only for
 | Camera | Catmull-Rom on raw positions, with a fast macro-to-wide pull | A spherical rig (target, azimuth, elevation, distance) with smooth tangents. Rest-to-rest moves use quintic easing, so acceleration is continuous at both ends. |
 | SFX | Assembly passes overlapped heavily | Air passes cover only the fast part of each flight, and the clicks are timed from the actual easing curve. Distinct tonal ticks mark the subtitle. Plastic taps mark brim contact and release. The track is silent from 7.0 s. |
 
-## Quality checks performed
+## Quality checks performed (v3)
 
-- Both MP4s decode all 270 frames. The SFX version is H.264 + AAC, 1920×1080, 30 fps, 9.00 s. The silent version has a video stream only.
-- A frame-to-frame difference scan found no pops or flicker spikes, including at re-rendered frame boundaries. The final hold (frames 230–270) has a mean change of 0.07/255.
-- Rest pose: the rig's 2D composite before 4.9 s and after 7.25 s differs from the original worker art by zero pixels.
-- Lettering: the assembled vectors match the original strokes with IoU 0.983.
-- Subtitle: the measured gap below the lowest point of the swash is 30 logo px. Spelling is `Painting & Construction Corp.`
-- Camera: speed and acceleration curves have no discontinuities. Rest-to-rest moves are quintic.
-- Audio: true peak −1.4 dBTP, −21.3 LUFS integrated, no clipping, silent from 7.1 s to the end.
+- Both MP4s decode all 270 frames. The SFX version is H.264 + AAC, 1920×1080, 30 fps, 9.00 s, −20.9 LUFS, −1.2 dBTP peak. The silent version has a video stream only.
+- A frame-to-frame difference scan of the rendered frames found no pops, flicker or snaps. The return (frames 189–225) changes smoothly, and the final hold (frames 230–270) changes by 0.07/255 on average.
+- Rig (`tools/check_arm_path.py`):
+  - 0 px of arm or hand covers the face outside the grip, on both the raise and the lower.
+  - Hand-to-brim contact error is 0 px through the whole contact.
+  - The total tip is 11.8°.
+  - The pose before 4.64 s (start of the anticipation glance) and from 7.27 s on matches the original artwork with 0 px difference.
+- Framing (`tools/check_framing.py`): the worker is not visible before his entrance, nothing clips, and the hat keeps at least a 13.6% margin from the frame edge.
+- Final frame: the logo is 38.8% of frame width, centred to within 4 px horizontally and 4 px vertically. The subtitle sits 30 logo px below the swash.
 
 ## Known limitations
 
-- The A leg shows a 1–2 px swell where it passes the crossing. It's visible only very close, in the first 1.5 s of flight.
-- The original sleeve pixels dissolve into the drawn sleeve over 3 frames as the arm starts moving, and back as it returns. Motion blur hides most of the dissolve.
-- While the worker rises (about 3.1–3.4 s), his lower body passes behind the subtitle words, which briefly reduces their contrast.
-- No transparent version was rendered for v2 (not requested). `--alpha` in the scene builder still supports it.
+- **Final framing at 38.8% width instead of 40–50%.** The logo is taller than it is wide, so 40% or more would crop the hat or the subtitle vertically.
+- **Entrance from below the frame.** The worker rises into frame from below and passes behind the subtitle and lettering. He can't start fully hidden behind the letters because his body is taller than the lettering, and avoiding that would need a fade or a mask, which the brief rules out. For about 0.3 s he is visible below the subtitle as he enters.
+- **Forearm foreshortening.** The forearm shortens mid-raise because it swings toward the camera (2.5D). This keeps the hand off the face, but the arm reads slightly shorter for a few frames.
+- **Background shading.** The studio floor was lowered out of view so the worker can rise from below, which slightly changes the backdrop shading compared with v2.
+- **A-leg crossing.** The 1–2 px swell on the A leg where it crossed the curl, visible only in close-up during the first 1.5 s, is unchanged from v2.
 
 ## Fidelity notes
 
