@@ -1,4 +1,4 @@
-# ARI Painting & Construction Corp. — 3D Logo Animation (v2)
+# ARI Painting & Construction Corp. — 3D Logo Animation (v3)
 
 A 9-second, 1920×1080, 30 fps cinematic logo animation. It was built in Blender 5.2 (Cycles) from the supplied logo artwork and storyboard.
 
@@ -10,21 +10,35 @@ A 9-second, 1920×1080, 30 fps cinematic logo animation. It was built in Blender
 | `ari-logo-animation_1080p_silent.mp4` | Same picture, no audio track |
 | `ari-logo-final-frame.png` | Final brand frame, 1920×1080 |
 | `frames-overview.jpg` | One frame per second, for review |
-| `v1/` | The previous approved-direction version (archived) |
+| `v2/`, `v1/` | Earlier versions (archived) |
 
 ## Sequence
 
 | Time | Scene |
 |---|---|
-| 0–2.3 s | Five letter parts float apart in space: A flourish, A leg, A thick stroke and tail, r, i. Each travels a curved path with its own 3D rotation and depth move, arriving staggered and decelerating precisely into place. The camera holds a wide enough view to read the parts, with a gentle orbit and dolly. |
+| 0–2.3 s | Five letter parts float apart in space: A flourish, A leg, A thick stroke and tail, r, i. Each travels a curved path with its own 3D rotation and depth move, arriving staggered and decelerating precisely into place. |
 | 2.4–3.0 s | The subtitle rises in word by word, below the lettering. |
-| 3.0–4.0 s | The worker rises from behind the finished lettering, occluded by the letters, with head and hat follow-through. The camera tilts up. |
-| 4.0–5.0 s | He settles with a breathing idle. The camera frames him large and slightly elevated. |
-| 5.0–6.0 s | **Hard-hat tip.** The shoulder prepares, the elbow bends and the forearm rises to the brim. The wrist turns so the fingers close over the brim, with the thumb underneath. The hat tips about 8° forward on the head while the head nods about 3°, about 11° in total. |
-| 6.0–7.0 s | The hat returns, the hand releases, the arm lowers and the camera dollies back. |
-| 7.6–9.0 s | Near-stationary hold on the complete logo. It fills about 39% of the frame width and is centred. |
+| 2.8–4.1 s | The worker rises from below the frame, passing behind the subtitle and lettering (real occlusion, fully opaque), and decelerates into the logo position with head and hat follow-through. |
+| 4.1–5.0 s | He settles with a breathing idle. The shoulder prepares and he glances. |
+| 5.0–5.6 s | **Raise.** The elbow swings out and the bare upper arm slides out of the sleeve. The forearm swings up toward the camera, foreshortened, so the hand rises beside the face, and the wrist turns the open fingers onto the brim. |
+| 5.6–6.5 s | **Contact and tip.** The fingers close over the brim, with the thumb under it. The hat tips about 9° forward on the head and the head nods about 3°, about 12° in total. The hand stays locked to the brim. |
+| 6.5–7.3 s | **Release and return.** The fingers open, and the arm lowers along the same path in reverse, ending exactly in the original logo pose. The camera dollies back. |
+| 7.6–9.0 s | Near-stationary hold on the complete logo, about 39% of frame width and centred. |
 
-## Revision summary (v1 → v2)
+## Revision summary (v2 → v3)
+
+| Issue | Root cause in v2 | Fix |
+|---|---|---|
+| Arm looked thin and disconnected, and the sleeve changed shape | The original sleeve pixels dissolved into a redrawn sleeve over 3 frames; the bare forearm was a long, thin white shape | The **original sleeve artwork is used for the whole gesture**, with no swap and no dissolve. A thick bare upper arm emerges from its opening, then elbow, forearm, wrist, hand, fingers and thumb, drawn in the face's treatment: white fill, the uniform's 5.6 px black ink outline, and graphic black shading. No skin tone was taken from the hand reference. |
+| Missing controls | The hand was one rigid piece | Separate controls for shoulder lift, upper arm, extension out of the sleeve, elbow, forearm (with axial foreshortening), wrist, finger curl (index and middle about the knuckles) and thumb. |
+| Hand swept across the face during raise and lower; the lower snapped | The forearm rotated about a low elbow, and the return used a different, faster curve | The raise and lower follow one path, and the lower is the raise run backwards. Phase 1 swings the elbow out while the forearm stays tucked behind the torso. Phase 2 swings the forearm up toward the camera, foreshortened, so the hand rises beside the face. A path check measures **0 px of arm over the face** outside the grip. The lower ends exactly in the logo pose. |
+| Tip not convincing | The fingertips only touched the brim; the tip was about 11° | The fingers open on approach, close on contact, stay locked to the hat through a ~12° tip (hat −9°, head −3°), and open on release before the arm moves away. Contact error is 0 px. |
+| Entrance relied on a fade | Started behind the letters with a 2-frame fade | **No opacity on the character at all.** He rises from below the frame on a smootherstep curve with peak speed mid-rise (2.35 m/s, reduced from about 4.6), passing behind the subtitle and letters. |
+| Clipping risk | — | `tools/check_framing.py` projects the hat, brim, fingertips and elbow through the animated camera every frame. Result: the worker is never visible before his entrance, nothing clips, and the hat keeps at least a 13.6% margin to the frame edge. |
+
+Reference handling: `assets/source/reference-hand-gesture.png` was used only for arm and hand anatomy and the helmet-tip motion (elbow out to the side, fingers over the brim, thumb under it). The face, helmet, uniform, colours, lighting, background, lettering and pedestal in that image were not used.
+
+## Earlier revision (v1 → v2)
 
 | Issue | Root cause in v1 | Fix |
 |---|---|---|
