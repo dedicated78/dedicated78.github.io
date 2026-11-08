@@ -14,6 +14,10 @@ export type OwnerPose = {
   aLe: number; // screen-left arm: elbow (deg, + = bend inward)
   aRs: number;
   aRe: number;
+  hL: number; // screen-left hand: 0 relaxed fist … 1 open, palm up, fingers relaxed
+  hR: number;
+  wL: number; // screen-left wrist (deg, + = fingers tip toward the palm side)
+  wR: number;
   legL: number; // deg
   legR: number;
   mouth: number; // 0 closed … 1 wide open
@@ -31,6 +35,7 @@ export type OwnerPose = {
 export const OWNER_REST: OwnerPose = {
   lean: 0, bob: 0, squash: 1, head: 0,
   aLs: 8, aLe: 10, aRs: 8, aRe: 10,
+  hL: 0, hR: 0, wL: 0, wR: 0,
   legL: 0, legR: 0,
   mouth: 0, smile: 0.5, brow: 0, angry: 0, eyes: 1, lookX: 0, lookY: 0,
   shades: 0, blush: 0, sweat: 0,
@@ -41,17 +46,56 @@ const SKIN_SH = '#C98E66';
 const HAIR = '#2E211B';
 const SUIT = ['#23827A', '#17615A', '#0E4842'];
 
-const Arm: React.FC<{side: 'L' | 'R'; s: number; e: number; front?: boolean}> = ({side, s, e}) => {
+// Relaxed open hand in forearm space (wrist at y 84, fingers along +y). `k` is the palm
+// side (+1 / -1 on local x): with the forearm turned outward the palm faces up.
+const FINGERS = [
+  {x: -7, len: 22, curl: 7},
+  {x: -2.5, len: 27, curl: 8},
+  {x: 2, len: 26, curl: 9},
+  {x: 6.5, len: 21, curl: 10},
+];
+const OpenHand: React.FC<{h: number; k: number}> = ({h, k}) => {
+  const o = Math.min(1, h * 2.5);
+  const tip = (f: (typeof FINGERS)[number]) => {
+    const y0 = 108;
+    const L = f.len * h;
+    const c = f.curl * h;
+    return `M${f.x * k},${y0} Q${(f.x + c * 0.25) * k},${y0 + L * 0.65} ${(f.x + c) * k},${y0 + L}`;
+  };
+  return (
+    <g opacity={o}>
+      {/* fingers: outlined strokes, slightly curled toward the palm side */}
+      {FINGERS.map((f, i) => (
+        <path key={`o${i}`} d={tip(f)} stroke={SKIN_SH} strokeWidth={12.5} strokeLinecap="round" fill="none" />
+      ))}
+      {FINGERS.map((f, i) => (
+        <path key={`f${i}`} d={tip(f)} stroke={SKIN} strokeWidth={9} strokeLinecap="round" fill="none" />
+      ))}
+      {/* thumb on the palm side, angled up and out */}
+      <path d={`M${10 * k},${94} Q${(16 + 8 * h) * k},${100 + 4 * h} ${(14 + 12 * h) * k},${108 + 6 * h}`} stroke={SKIN_SH} strokeWidth={12.5} strokeLinecap="round" fill="none" />
+      <path d={`M${10 * k},${94} Q${(16 + 8 * h) * k},${100 + 4 * h} ${(14 + 12 * h) * k},${108 + 6 * h}`} stroke={SKIN} strokeWidth={9} strokeLinecap="round" fill="none" />
+    </g>
+  );
+};
+
+const Arm: React.FC<{side: 'L' | 'R'; s: number; e: number; h?: number; w?: number}> = ({side, s, e, h = 0, w = 0}) => {
   const dir = side === 'L' ? 1 : -1;
   const sx = side === 'L' ? 128 : 272;
+  const k = -dir; // palm side on local x
+  const open = Math.max(0, Math.min(1, h));
   return (
     <g transform={`translate(${sx} 318) rotate(${s * dir})`}>
       <rect x={-20} y={-6} width={40} height={100} rx={20} fill={`url(#suitArm${side})`} />
       <g transform={`translate(0 90) rotate(${-e * dir})`}>
         <rect x={-18} y={-4} width={36} height={86} rx={18} fill={`url(#suitArm${side})`} />
         <rect x={-17} y={70} width={34} height={14} rx={6} fill={C.cream} />
-        <circle cx={0} cy={96} r={22} fill="url(#skin)" />
-        <ellipse cx={-6 * dir} cy={90} rx={8} ry={5} fill="rgba(255,255,255,0.25)" />
+        <g transform={`rotate(${-w * k} 0 82)`}>
+          {open > 0.001 && <OpenHand h={open} k={k} />}
+          {/* palm: the relaxed fist flattens into an open palm as the hand opens */}
+          <ellipse cx={0} cy={96 + 4 * open} rx={22 - 5 * open} ry={22 + 1 * open} fill="url(#skin)" />
+          {open > 0.001 && <ellipse cx={6 * k} cy={100} rx={9 * open} ry={14 * open} fill="#F6CDA9" opacity={0.55 * open} />}
+          <ellipse cx={-6 * dir} cy={90} rx={8} ry={5} fill="rgba(255,255,255,0.25)" />
+        </g>
       </g>
     </g>
   );
@@ -184,8 +228,8 @@ export const Owner: React.FC<{pose: OwnerPose; width?: number; style?: React.CSS
         </g>
 
         {/* arms in front */}
-        <Arm side="L" s={p.aLs} e={p.aLe} />
-        <Arm side="R" s={p.aRs} e={p.aRe} />
+        <Arm side="L" s={p.aLs} e={p.aLe} h={p.hL} w={p.wL} />
+        <Arm side="R" s={p.aRs} e={p.aRe} h={p.hR} w={p.wR} />
       </g>
     </svg>
   );

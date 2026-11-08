@@ -70,3 +70,18 @@ npm ci
 npm run render -- --browser-executable=/path/to/chrome   # writes out/growwithmh-ep01.mp4
 npm run studio                                           # live preview with audio
 ```
+
+## Revision 1 · owner gesture on "Wait, so verified doesn't mean number one?" (14.7–18.1 s)
+- Replaced the head-scratch (screen-left arm raised to 165°, elbow above the head) with a one-arm palm-up question on the screen-right arm, toward the assistant.
+- Beats:
+  - 14.71 "Wait,": small flinch, elbows at the sides.
+  - 15.31: settle to relaxed rest.
+  - 16.08 "doesn't": slight anticipation as the forearm draws in.
+  - 16.38: the forearm rotates outward with the elbow by the body; the hand opens 0.12 s behind it.
+  - 16.86 → 17.20 "one?": peak with a small overshoot, open palm, relaxed curled fingers, wrist extended 12°, head tilt 8° and brows up.
+  - 17.42 → 17.84: smooth return to rest, with the hand relaxing after the arm.
+- Rig: `Owner` gained optional `hL/hR` (open hand) and `wL/wR` (wrist) controls. Both default to 0, which draws the original closed hand, so every other scene renders as before.
+- Verification:
+  - Frames outside 14.7–18.1 s match the approved render at 70–99 dB PSNR (render noise only).
+  - The VO, music, SFX, mix and master are byte-identical (md5).
+  - Duration is still 46.500 s, loudness -14.7 LUFS and true peak -1.8 dBTP.

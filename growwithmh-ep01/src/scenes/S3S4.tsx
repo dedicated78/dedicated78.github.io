@@ -68,9 +68,24 @@ export const S4Assistant: React.FC<{t: number}> = ({t}) => {
 
   // owner
   const o = keyed(t, {...OWNER_REST, angry: 0.3, brow: -0.2, smile: -0.2, lookX: 0.8}, [
-    {t: Q.wait - 0.1, d: 0.2, e: EZ.back, bob: -24, eyes: 1.35, sweat: 1, angry: 0, brow: 0.8, aLs: 70, aLe: 60, aRs: 70, aRe: 60},
+    // "Wait," startle: a hop with a small flinch, elbows stay at the sides
+    {t: Q.wait - 0.1, d: 0.2, e: EZ.back, bob: -24, eyes: 1.35, sweat: 1, angry: 0, brow: 0.8, aLs: 18, aLe: 34, aRs: 18, aRe: 34},
     {t: Q.wait + 0.25, d: 0.2, bob: 0},
-    {t: Q.wait + 0.55, d: 0.35, aLs: 165, aLe: 130, aRs: 10, aRe: 20, brow: 0.9, smile: -0.35, head: 8, eyes: 1.1, lookX: 0.7, lookY: -0.2},
+    // "so verified…": settle to a relaxed rest while the confusion builds
+    {t: Q.wait + 0.5, d: 0.45, e: EZ.inOut, aLs: 9, aLe: 12, aRs: 10, aRe: 14, brow: 0.5, smile: -0.25, head: 3, eyes: 1.1, lookX: 0.7, lookY: -0.15},
+    // anticipation on "doesn't": the forearm draws in a touch before it opens out
+    {t: Q.numberOne - 0.72, d: 0.3, e: EZ.inOut, aRs: 6, aRe: 26, head: 1},
+    // palm-up question (screen-right arm, toward the assistant): elbow stays by the
+    // body, the forearm rotates outward, the hand opens a beat behind it
+    {t: Q.numberOne - 0.42, d: 0.42, e: EZ.inOut, aRs: 15, aRe: -64, wR: 4, head: 5, brow: 0.8},
+    {t: Q.numberOne - 0.3, d: 0.42, e: EZ.inOut, hR: 0.85},
+    // peak lands on "one?": slight overshoot, head tilt, brows up, small shoulder lift
+    {t: Q.numberOne + 0.06, d: 0.34, e: EZ.back, aRs: 18, aRe: -82, wR: 12, hR: 1, head: 8, lean: 1.5, brow: 1, eyes: 1.2, smile: -0.35, lookY: -0.3},
+    {t: Q.numberOne + 0.26, d: 0.2, e: EZ.inOut, bob: -5},
+    {t: Q.numberOneEnd - 0.08, d: 0.3, e: EZ.inOut, bob: 0},
+    // return to rest after the line; the hand relaxes slightly behind the arm
+    {t: Q.numberOneEnd + 0.02, d: 0.36, e: EZ.inOut, aRs: 9, aRe: 12, wR: 0, head: 4, lean: 0, lookY: -0.15},
+    {t: Q.numberOneEnd + 0.08, d: 0.36, e: EZ.inOut, hR: 0},
     {t: Q.soNo - 0.1, d: 0.3, e: EZ.back, aLs: 48, aLe: 142, aRs: 48, aRe: 142, head: -4, eyes: 1.3, smile: 0.7, brow: 0.7, sweat: 0, lookX: 0.5, lookY: -0.6},
     {t: Q.sir, d: 0.4, aLs: 10, aLe: 20, aRs: 10, aRe: 20, smile: -0.1, eyes: 0.95, head: 4, lookX: 0.8, lookY: 0},
     {t: Q.manage, d: 0.4, blush: 0.5, smile: -0.25},
