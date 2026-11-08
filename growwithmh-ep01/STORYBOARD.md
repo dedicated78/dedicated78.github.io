@@ -44,3 +44,29 @@ transcription, and phrase starts are refined against the waveform (`src/cues.jso
 3. **One voice, three roles:** the VO is a single voice for the owner, the assistant and the narrator. Speaker tags in the captions separate them.
 4. **Scene order** follows the supplied VO (see the scene 6 note above).
 5. **No ranking claims:** the search panel is tagged EXAMPLE and carries no ratings, positions, client names or stats. "Relevance, distance, prominence" are stated as the main factors, matching the VO. Nothing implies Google endorsement.
+
+## QA (final MP4: out/growwithmh-ep01.mp4)
+| Check | Result |
+|---|---|
+| Streams | H.264 1080x1920 30 fps, AAC 48 kHz; video and audio both 46.500 s (no A/V gap) |
+| Loudness | -14.7 LUFS integrated, LRA 5.3 LU, true peak -1.8 dBTP (target -16..-14 LUFS, TP <= -1) |
+| Black frames > 0.2 s | none |
+| Frozen video > 2 s | none (the end card keeps a slow ambient drift) |
+| Silence > 0.5 s at -50 dB | 9.54-10.44 s only: the deliberate beat after "that's my mom" |
+| First 3 s | frame 0 already shows the owner and the profile card; VERIFIED! lands at 1.1 s |
+| Caption sync | word highlights driven by the transcript onsets; spot-checked at every scene boundary |
+| Safe areas / clipping | headlines start at y >= 250, captions end above y 1580; review stills at 33 timestamps show no clipped text after fixes (EXAMPLE tag, factor cards at frame edges, stray arc dot) |
+| SFX sync | calendar flips moved onto "Friday?" where the page actually turns |
+| Claims | no rankings, ratings, client stats or Google endorsement on screen; the search panel is tagged EXAMPLE |
+| Logo | typographic wordmark, undistorted (no supplied logo file; see notes) |
+| Ending | end card holds 2.3 s after the last word; music fades over the final 1.2 s, no hard cut |
+
+Limits of this QA: audio was checked by measurement (loudness, peaks, silence, cue timing), not by ear.
+
+## Rebuild
+```
+npm ci
+# put vo.mp3 and music-source.mp3 in source/
+npm run render -- --browser-executable=/path/to/chrome   # writes out/growwithmh-ep01.mp4
+npm run studio                                           # live preview with audio
+```
