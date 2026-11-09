@@ -89,14 +89,19 @@ const OpenHand: React.FC<{h: number; k: number}> = ({h, k}) => {
   );
 };
 
-/** Phone gripped in the hand, drawn in the hand's own space (palm centre at 0,0). Screen faces his
- * face, so the camera sees the phone's back; fingers wrap the inner edge, the thumb the outer edge,
- * the heel of the palm cradles the bottom. `k` = +1 for the screen-right hand. */
+/** Phone held toward his face, drawn in the hand's own space (palm centre at 0,0). The screen faces
+ * him, so the camera sees the phone's back and the hand supports it from behind: only the heel of the
+ * palm shows under the lower edge and a slim, flat sliver of fingertips past the inner edge. No finger
+ * or thumb is drawn on the audience-facing back. `k` = +1 for the screen-right hand. */
 export const PHONE_GRIP = {angle: -38, cy: -36};
 const HeldPhone: React.FC<{k: number; glow: number; turn: number; buzz: number}> = ({k, glow, turn, buzz}) => {
   const sx = Math.max(0.04, Math.cos(Math.PI * 0.5 * Math.min(1, turn * 1)));
+  const inner = k > 0 ? -1 : 1; // the edge toward his body
   return (
     <g transform={`translate(${buzz} 0) rotate(${PHONE_GRIP.angle * k}) scale(${sx} 1)`}>
+      {/* fingertips behind the phone: only a thin flat edge peeks past the inner side */}
+      <rect x={inner < 0 ? -28 : 16} y={-50} width={12} height={34} rx={5} fill={SKIN_SH} />
+      <rect x={inner < 0 ? -27 : 17} y={-49} width={10} height={32} rx={4.5} fill={SKIN} />
       {/* back of the phone (screen faces his face) */}
       <rect x={-24} y={-80} width={48} height={88} rx={10} fill="url(#phoneBack)" stroke="#0A1A19" strokeWidth={1.5} />
       <rect x={-24 + (k > 0 ? 30 : 4)} y={-72} width={14} height={16} rx={4} fill="#0B1F1D" />
@@ -104,16 +109,6 @@ const HeldPhone: React.FC<{k: number; glow: number; turn: number; buzz: number}>
       <circle cx={-17 + (k > 0 ? 30 : 4) + 7} cy={-60} r={2.6} fill="#2E5550" />
       {/* light from the screen catching the top edge */}
       <rect x={-21} y={-82} width={42} height={3.5} rx={1.75} fill="#B7D8C5" opacity={0.45 + 0.5 * glow} />
-      {/* fingers curled round the inner edge onto the back */}
-      {[-50, -35, -20].map((y, i) => (
-        <g key={i}>
-          <rect x={k > 0 ? -30 : 13} y={y - 6.5} width={17} height={13} rx={6.5} fill={SKIN_SH} />
-          <rect x={k > 0 ? -29 : 14} y={y - 5} width={15} height={10} rx={5} fill={SKIN} />
-        </g>
-      ))}
-      {/* thumb along the outer edge */}
-      <path d={`M${20 * k},6 Q${30 * k},-12 ${27 * k},-36`} stroke={SKIN_SH} strokeWidth={13} strokeLinecap="round" fill="none" />
-      <path d={`M${20 * k},6 Q${30 * k},-12 ${27 * k},-36`} stroke={SKIN} strokeWidth={9.5} strokeLinecap="round" fill="none" />
     </g>
   );
 };

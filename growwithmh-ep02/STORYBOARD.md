@@ -123,3 +123,10 @@ Limits of this QA: I can't watch or listen in real time. Motion was checked thro
 - **QA:**
   - Strips at 10 and 30 fps through 0–4.3 s and the 7.1–7.8 s handoff show no pops, no floating phone, and no rotation of the phone inside the grip.
   - Loudness is -14.1 LUFS with a true peak of -1.9 dBTP. There are no black frames or freezes, and a full decode reports 0 errors.
+
+## Revision 2 · grip perspective (0.0–7.3 s)
+- The phone is held toward his face, so the audience sees its back. The hand now supports it from behind:
+  - The stacked fingers and the thumb on the audience-facing back were removed.
+  - Only the heel of the palm shows under the lower edge, with a slim, flat sliver of fingertips past the inner edge, drawn behind the phone.
+- **Unchanged:** the phone position, angle and hand side, the arm pose, the character, the expressions, the camera, the subtitles and the audio (byte-identical md5).
+- Only the 221 frames showing the hand-held phone (0–7.33 s) differ from Revision 1. Duration is still 60.533 s, loudness -14.1 LUFS and true peak -1.9 dBTP. A full decode reports 0 errors.
