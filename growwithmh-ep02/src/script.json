@@ -1,0 +1,109 @@
+{
+  "title": "What If Google Maps Could Talk?",
+  "leadIn": 0.35,
+  "tail": 2.3,
+  "lines": [
+    {
+      "id": "L01",
+      "who": "owner",
+      "text": "What if Google Maps could actually talk?",
+      "gapAfter": 1.0,
+      "why": "phone buzzes, the assistant pops out of the screen, owner recoils"
+    },
+    {
+      "id": "L02",
+      "who": "assistant",
+      "text": "Oh, finally. We need to talk.",
+      "gapAfter": 0.55,
+      "why": "comedic beat; owner pockets the phone"
+    },
+    {
+      "id": "L03",
+      "who": "owner",
+      "text": "Why do customers keep calling when we're closed?",
+      "gapAfter": 0.35
+    },
+    {
+      "id": "L04",
+      "who": "assistant",
+      "text": "Because your profile says you're open on Sundays.",
+      "gapAfter": 0.45,
+      "why": "owner reads the card; calendar turns to Sunday"
+    },
+    {
+      "id": "L05",
+      "who": "owner",
+      "text": "We stopped working Sundays last year!",
+      "gapAfter": 0.3
+    },
+    {
+      "id": "L06",
+      "who": "assistant",
+      "text": "Your opening hours are a historical documentary.",
+      "gapAfter": 0.75,
+      "why": "film reel, projector, facepalm"
+    },
+    {
+      "id": "L07",
+      "who": "owner",
+      "text": "Okay... anything else?",
+      "gapAfter": 0.3
+    },
+    {
+      "id": "L08",
+      "who": "assistant",
+      "text": "Your main category says General Contractor. You mostly repair roofs. Is that really your best description?",
+      "gapAfter": 0.3
+    },
+    {
+      "id": "L09",
+      "who": "owner",
+      "text": "I thought you'd figure it out!",
+      "gapAfter": 0.3
+    },
+    {
+      "id": "L10",
+      "who": "assistant",
+      "text": "I'm a map, not your unpaid office manager.",
+      "gapAfter": 0.65,
+      "why": "paperwork slides across to the owner"
+    },
+    {
+      "id": "L11",
+      "who": "narrator",
+      "text": "Your Google Business Profile should accurately describe what you do and when you're available.",
+      "gapAfter": 0.3
+    },
+    {
+      "id": "L12",
+      "who": "narrator",
+      "text": "Review your category, business hours, services, and contact details.",
+      "gapAfter": 0.3
+    },
+    {
+      "id": "L13",
+      "who": "narrator",
+      "text": "Accurate information helps customers make decisions. It doesn't automatically guarantee top rankings.",
+      "gapAfter": 0.5
+    },
+    {
+      "id": "L14",
+      "who": "owner",
+      "text": "So... you weren't ignoring me?",
+      "gapAfter": 0.3
+    },
+    {
+      "id": "L15",
+      "who": "assistant",
+      "text": "No. You were ignoring your profile.",
+      "gapAfter": 0.95,
+      "why": "assistant turns away; owner freezes"
+    },
+    {
+      "id": "L16",
+      "who": "narrator",
+      "text": "GrowwithMH. Get found. Stay accurate.",
+      "gapAfter": 0
+    }
+  ]
+}
