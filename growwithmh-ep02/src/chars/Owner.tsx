@@ -18,6 +18,12 @@ export type OwnerPose = {
   hR: number;
   wL: number; // screen-left wrist (deg, + = fingers tip toward the palm side)
   wR: number;
+  fL: number; // screen-left forearm length factor: 1 = side-on, <1 = foreshortened toward camera
+  fR: number;
+  phoneR: number; // 0 … 1 phone held in the screen-right hand (built into the hand, so it can't drift)
+  phoneGlow: number; // 0 … 1 screen light spilling up toward his face
+  phoneTurn: number; // 0 … 1 phone turning edge-on in the hand (handoff to the 3D phone prop)
+  phoneBuzz: number; // px of vibration jitter
   nod: number; // 0 … 1 head lowers (embarrassment)
   shrug: number; // 0 … 1 shoulders lift (negative = drop/relax)
   legL: number; // deg
@@ -39,6 +45,7 @@ export const OWNER_REST: OwnerPose = {
   aLs: 8, aLe: 10, aRs: 8, aRe: 10,
   hL: 0, hR: 0, wL: 0, wR: 0,
   nod: 0, shrug: 0,
+  fL: 1, fR: 1, phoneR: 0, phoneGlow: 0, phoneTurn: 0, phoneBuzz: 0,
   legL: 0, legR: 0,
   mouth: 0, smile: 0.5, brow: 0, angry: 0, eyes: 1, lookX: 0, lookY: 0,
   shades: 0, blush: 0, sweat: 0,
@@ -82,23 +89,63 @@ const OpenHand: React.FC<{h: number; k: number}> = ({h, k}) => {
   );
 };
 
-const Arm: React.FC<{side: 'L' | 'R'; s: number; e: number; h?: number; w?: number; sy?: number}> = ({side, s, e, h = 0, w = 0, sy = 318}) => {
+/** Phone gripped in the hand, drawn in the hand's own space (palm centre at 0,0). Screen faces his
+ * face, so the camera sees the phone's back; fingers wrap the inner edge, the thumb the outer edge,
+ * the heel of the palm cradles the bottom. `k` = +1 for the screen-right hand. */
+export const PHONE_GRIP = {angle: -38, cy: -36};
+const HeldPhone: React.FC<{k: number; glow: number; turn: number; buzz: number}> = ({k, glow, turn, buzz}) => {
+  const sx = Math.max(0.04, Math.cos(Math.PI * 0.5 * Math.min(1, turn * 1)));
+  return (
+    <g transform={`translate(${buzz} 0) rotate(${PHONE_GRIP.angle * k}) scale(${sx} 1)`}>
+      {/* back of the phone (screen faces his face) */}
+      <rect x={-24} y={-80} width={48} height={88} rx={10} fill="url(#phoneBack)" stroke="#0A1A19" strokeWidth={1.5} />
+      <rect x={-24 + (k > 0 ? 30 : 4)} y={-72} width={14} height={16} rx={4} fill="#0B1F1D" />
+      <circle cx={-17 + (k > 0 ? 30 : 4) + 7} cy={-68} r={2.6} fill="#2E5550" />
+      <circle cx={-17 + (k > 0 ? 30 : 4) + 7} cy={-60} r={2.6} fill="#2E5550" />
+      {/* light from the screen catching the top edge */}
+      <rect x={-21} y={-82} width={42} height={3.5} rx={1.75} fill="#B7D8C5" opacity={0.45 + 0.5 * glow} />
+      {/* fingers curled round the inner edge onto the back */}
+      {[-50, -35, -20].map((y, i) => (
+        <g key={i}>
+          <rect x={k > 0 ? -30 : 13} y={y - 6.5} width={17} height={13} rx={6.5} fill={SKIN_SH} />
+          <rect x={k > 0 ? -29 : 14} y={y - 5} width={15} height={10} rx={5} fill={SKIN} />
+        </g>
+      ))}
+      {/* thumb along the outer edge */}
+      <path d={`M${20 * k},6 Q${30 * k},-12 ${27 * k},-36`} stroke={SKIN_SH} strokeWidth={13} strokeLinecap="round" fill="none" />
+      <path d={`M${20 * k},6 Q${30 * k},-12 ${27 * k},-36`} stroke={SKIN} strokeWidth={9.5} strokeLinecap="round" fill="none" />
+    </g>
+  );
+};
+
+const Arm: React.FC<{side: 'L' | 'R'; s: number; e: number; h?: number; w?: number; sy?: number; fore?: number; phone?: {on: number; glow: number; turn: number; buzz: number}}> = ({side, s, e, h = 0, w = 0, sy = 318, fore = 1, phone}) => {
   const dir = side === 'L' ? 1 : -1;
   const sx = side === 'L' ? 128 : 272;
   const k = -dir; // palm side on local x
   const open = Math.max(0, Math.min(1, h));
+  const L = Math.max(0.3, Math.min(1, fore));
+  // foreshortened forearm: shorter sleeve, darker cuff opening showing it points toward camera
   return (
     <g transform={`translate(${sx} ${sy}) rotate(${s * dir})`}>
       <rect x={-20} y={-6} width={40} height={100} rx={20} fill={`url(#suitArm${side})`} />
       <g transform={`translate(0 90) rotate(${-e * dir})`}>
-        <rect x={-18} y={-4} width={36} height={86} rx={18} fill={`url(#suitArm${side})`} />
-        <rect x={-17} y={70} width={34} height={14} rx={6} fill={C.cream} />
-        <g transform={`rotate(${-w * k} 0 82)`}>
+        {/* when the forearm comes toward camera it crosses the jacket: a soft contact shadow and a
+            thin edge keep the sleeve readable from elbow to hand */}
+        {L < 0.98 && <rect x={-16} y={2} width={40} height={4 + 82 * L} rx={18} fill="rgba(6,30,28,0.28)" transform="translate(5 6)" />}
+        <rect x={-18} y={-4} width={36} height={4 + 82 * L} rx={18} fill={`url(#suitArm${side})`} stroke={L < 0.98 ? 'rgba(6,30,28,0.55)' : undefined} strokeWidth={L < 0.98 ? 2.5 : undefined} />
+        {L < 0.98 && <path d={`M-10,8 Q-13,${40 * L} -8,${76 * L}`} stroke="rgba(255,255,255,0.22)" strokeWidth={5} fill="none" strokeLinecap="round" />}
+        <rect x={-17} y={70 * L + 12 * (1 - L)} width={34} height={14} rx={6} fill={C.cream} />
+        <g transform={`translate(0 ${(L - 1) * 90}) rotate(${-w * k} 0 82)`}>
           {open > 0.001 && <OpenHand h={open} k={k} />}
           {/* palm: the relaxed fist flattens into an open palm as the hand opens */}
           <ellipse cx={0} cy={96 + 4 * open} rx={22 - 5 * open} ry={22 + 1 * open} fill="url(#skin)" />
           {open > 0.001 && <ellipse cx={6 * k} cy={100} rx={9 * open} ry={14 * open} fill="#F6CDA9" opacity={0.55 * open} />}
           <ellipse cx={-6 * dir} cy={90} rx={8} ry={5} fill="rgba(255,255,255,0.25)" />
+          {phone && phone.on > 0.5 && (
+            <g transform="translate(0 96)">
+              <HeldPhone k={k} glow={phone.glow} turn={phone.turn} buzz={phone.buzz} />
+            </g>
+          )}
         </g>
       </g>
     </g>
@@ -141,6 +188,10 @@ export const Owner: React.FC<{pose: OwnerPose; width?: number; style?: React.CSS
         <linearGradient id="hair" x1="0" y1="0" x2="1" y2="1">
           <stop offset="0%" stopColor="#4A372C" />
           <stop offset="100%" stopColor={HAIR} />
+        </linearGradient>
+        <linearGradient id="phoneBack" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stopColor="#2A5F59" />
+          <stop offset="100%" stopColor="#0F2E2B" />
         </linearGradient>
         <filter id="ownerShadow" x="-30%" y="-20%" width="160%" height="150%">
           <feDropShadow dx="10" dy="16" stdDeviation="12" floodColor="#192B2A" floodOpacity="0.22" />
@@ -232,8 +283,8 @@ export const Owner: React.FC<{pose: OwnerPose; width?: number; style?: React.CSS
         </g>
 
         {/* arms in front */}
-        <Arm side="L" s={p.aLs} e={p.aLe} h={p.hL} w={p.wL} sy={SHOULDER_Y - p.shrug * 12} />
-        <Arm side="R" s={p.aRs} e={p.aRe} h={p.hR} w={p.wR} sy={SHOULDER_Y - p.shrug * 12} />
+        <Arm side="L" s={p.aLs} e={p.aLe} h={p.hL} w={p.wL} sy={SHOULDER_Y - p.shrug * 12} fore={p.fL} />
+        <Arm side="R" s={p.aRs} e={p.aRe} h={p.hR} w={p.wR} sy={SHOULDER_Y - p.shrug * 12} fore={p.fR} phone={{on: p.phoneR, glow: p.phoneGlow, turn: p.phoneTurn, buzz: p.phoneBuzz}} />
       </g>
     </svg>
   );

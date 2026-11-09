@@ -2,9 +2,9 @@ import React from 'react';
 import {AbsoluteFill} from 'remotion';
 import {C} from '../theme';
 import {EZ, Q, keyed, lerp, pr, speakerAt, voice} from '../timing';
-import {OWNER_REST, OwnerPose} from '../chars/Owner';
+import {OWNER_REST, OwnerPose, PHONE_GRIP} from '../chars/Owner';
 import {Pin, PIN_REST, PinPose} from '../chars/Pin';
-import {armTo, handAt, toWorld} from '../chars/rig';
+import {armTo, handAt, phoneAt, toWorld} from '../chars/rig';
 import {Card3D, EDGE, Obj} from '../components/Card3D';
 import {Hl, Kicker} from '../components/Text';
 import {Neighborhood, Phone} from '../props/Props';
@@ -28,22 +28,34 @@ const talking = (who: 'owner' | 'assistant', t: number, k = 1.6) => (speakerAt(t
 
 // hand targets in the owner's viewBox (palm centre)
 const PHONE_HOLD = {x: 262, y: 428};
+// natural hold: upper arm hanging, forearm toward camera (foreshortened), phone at waist / lower chest
+const GRIP = {aRs: 8, aRe: 40, fR: 0.5, wR: 0};
 const POCKET = {x: 300, y: 470};
 
 // ---------------------------------------------------------------- owner performance
 const ownerPose = (t: number): OwnerPose => {
-  const base: OwnerPose = {...OWNER_REST, lookX: 0.35, lookY: 0.7, brow: 0.35, head: 4, smile: 0.25, ...armTo('R', PHONE_HOLD)};
+  const base: OwnerPose = {...OWNER_REST, ...GRIP, lookX: 0.3, lookY: 0.75, brow: 0.3, head: 3, smile: 0.25};
   const p = keyed(t, base, [
-    // SCENE 01 · curious, looking at the phone
-    {t: Q.L01 + 0.9, d: 0.5, e: EZ.inOut, brow: 0.7, head: 6, lookY: 0.55},
-    {t: Q.talk1 - 0.4, d: 0.4, e: EZ.inOut, lookY: -0.35, lookX: 0.1, brow: 0.85, smile: 0.45, head: -3},
-    {t: Q.buzz, d: 0.12, lookY: 0.75, lookX: 0.35, eyes: 1.2, brow: 0.5, smile: 0.1, head: 3},
-    // the assistant pops out: a small recoil, phone pulled in, shoulders up
-    {t: Q.emerge + 0.05, d: 0.18, e: EZ.back, lean: -6, head: -7, eyes: 1.4, brow: 1, shrug: 0.6, ...armTo('R', {x: 252, y: 410}, 0.6), aLs: 20, aLe: 42, lookX: 0.9, lookY: -0.3, smile: -0.3},
-    {t: Q.emerge + 0.45, d: 0.5, e: EZ.inOut, lean: -2.5, shrug: 0.15, head: -3, eyes: 1.2, ...armTo('R', PHONE_HOLD, 0.15), aLs: 10, aLe: 16},
+    // SCENE 01 · reading his phone (held low, screen toward his face), then the thought lands:
+    // gaze lifts to the audience, brows up, head tilts
+    {t: Q.L01 + 0.47, d: 0.45, e: EZ.inOut, lookX: 0, lookY: -0.05, brow: 0.75, head: 5, smile: 0.35},
+    // small palm-up with the free hand: elbow stays by the torso, forearm comes forward
+    {t: Q.L01 + 0.62, d: 0.3, e: EZ.inOut, aLs: 6, aLe: 22},
+    {t: Q.L01 + 0.87, d: 0.45, e: EZ.inOut, aLs: 7, aLe: -40, fL: 0.55, wL: 4},
+    {t: Q.L01 + 0.99, d: 0.45, e: EZ.inOut, hL: 0.85},
+    {t: Q.talk1 - 0.08, d: 0.34, e: EZ.back, aLs: 8, aLe: -54, fL: 0.5, wL: 10, hL: 1, head: 7, brow: 0.9, shrug: 0.12},
+    {t: Q.L01e + 0.02, d: 0.45, e: EZ.inOut, aLs: 8, aLe: 10, fL: 1, wL: 0, head: 4, shrug: 0},
+    {t: Q.L01e + 0.1, d: 0.45, e: EZ.inOut, hL: 0},
+    // the phone buzzes: eyes drop back to the screen
+    {t: Q.buzz, d: 0.2, e: EZ.inOut, lookY: 0.75, lookX: 0.3, brow: 0.5, smile: 0.1, head: 3},
+    // the assistant pops out of the screen: eyes follow it up, small startled lean back,
+    // shoulders lift; the phone stays in the hand
+    {t: Q.emerge + 0.04, d: 0.28, e: EZ.out, lean: -3, shrug: 0.35, head: -4, eyes: 1.35, brow: 1, lookX: 0.55, lookY: -0.7, smile: -0.2, aRe: 46, aLs: 12, aLe: 22},
+    {t: Q.emerge + 0.42, d: 0.5, e: EZ.inOut, lookX: 0.95, lookY: -0.15},
+    {t: Q.emerge + 0.6, d: 0.5, e: EZ.inOut, lean: -2, shrug: 0.12, head: -3, eyes: 1.2, ...GRIP, aLs: 10, aLe: 16},
     {t: Q.needToTalk, d: 0.3, eyes: 1.3, sweat: 0.8, brow: 0.9, smile: -0.25},
     // SCENE 02 · shows the missed calls to the assistant: forearm forward, elbow low, small lean in
-    {t: Q.L03 - 0.15, d: 0.45, e: EZ.inOut, lean: 3, shrug: 0, ...armTo('R', {x: 336, y: 370}), angry: 0.35, brow: 0.3, smile: -0.3, lookX: 0.85, lookY: 0.05, head: 3, eyes: 1.1, sweat: 0.4},
+    {t: Q.L03 - 0.15, d: 0.45, e: EZ.inOut, lean: 3, shrug: 0, fR: 1, wR: 0, ...armTo('R', {x: 336, y: 370}), angry: 0.35, brow: 0.3, smile: -0.3, lookX: 0.85, lookY: 0.05, head: 3, eyes: 1.1, sweat: 0.4},
     {t: Q.closed - 0.12, d: 0.3, e: EZ.back, lean: 4.5, ...armTo('R', {x: 344, y: 362}), head: 5},
     {t: Q.L03e + 0.1, d: 0.4, e: EZ.inOut, lean: 1.5, ...armTo('R', PHONE_HOLD), angry: 0.1},
     // reads the card; slips the phone into his pocket on the way down
@@ -92,7 +104,7 @@ const ownerPose = (t: number): OwnerPose => {
   // breathing (stops dead for the comedic freeze)
   const alive = t < Q.L15e - 0.1;
   if (alive) p.bob += Math.sin(t * 2.1) * 1.6;
-  p.mouth = talking('owner', t, 1.7);
+  p.mouth = Math.max(talking('owner', t, 1.7), 0.22 * pr(t, Q.emerge + 0.06, 0.2) * (1 - pr(t, Q.emerge + 0.75, 0.35)));
   if (alive && p.eyes > 0.5) p.eyes *= blink(t, 3.1, 0.7);
   return p;
 };
@@ -182,13 +194,24 @@ export const TwoShot: React.FC<{t: number; fade?: number}> = ({t, fade = 1}) => 
   const show = pr(t, Q.L03 - 0.15, 0.45, EZ.inOut) * (1 - pr(t, Q.L03e + 0.1, 0.4, EZ.inOut));
   const phoneW = 84;
   const phone = {x: hand.x + 4 + (buzzing ? Math.sin(t * 90) * 3 : 0), y: hand.y - 26};
+  // until he turns it to show the assistant, the phone is part of his hand (rig); it turns edge-on
+  // in his grip and hands over to the 3D prop at that instant
+  const inHand = spin < 0.25;
+  // the 3D prop starts at the hand-held phone's size and grows to its own size as the turn completes
+  const handover = lerp(0.55, 1, EZ.inOut(Math.min(1, Math.max(0, (spin - 0.25) / 0.75))));
+  o.phoneR = inHand ? 1 : 0;
+  o.phoneTurn = spin / 0.25;
+  o.phoneGlow = glow;
+  o.phoneBuzz = buzzing ? Math.sin(t * 90) * 2 : 0;
+  const rp = toWorld(phoneAt(o, PHONE_GRIP), OWN.x, OWN.y, OWN.w);
+  const src = inHand ? rp : phone; // where the glow and the assistant come from
 
   // assistant: pops out of the screen, arcs over, lands on its tile
   const rise = pr(t, Q.emerge, 0.38, EZ.back); // pops up out of the screen
   const fly = pr(t, Q.emerge + 0.42, 0.5, EZ.inOut); // then hops across to its tile
   const tileIn = pr(t, Q.emerge + 0.5, 0.45, EZ.back);
-  const riseX = phone.x + 40 * rise;
-  const riseY = phone.y - 10 - 150 * rise;
+  const riseX = src.x + 40 * rise;
+  const riseY = src.y - 30 - 150 * rise;
   const px = lerp(riseX, PIN.x, fly);
   const py = lerp(riseY, PIN.y, fly) - Math.sin(Math.PI * fly) * 160;
   const pscale = lerp(0.08, 0.5, rise) + 0.5 * fly;
@@ -238,15 +261,16 @@ export const TwoShot: React.FC<{t: number; fade?: number}> = ({t, fade = 1}) => 
           </div>
         )}
 
+        {/* screen glow, behind him so it never tints his hands */}
+        {pocketed < 1 && glow > 0 && (
+          <div style={{position: 'absolute', left: src.x - 160, top: src.y - 160, width: 320, height: 320, borderRadius: '50%', background: `radial-gradient(closest-side, rgba(42,128,119,${0.45 * glow}), rgba(183,216,197,${0.18 * glow}) 60%, rgba(183,216,197,0))`}} />
+        )}
         <OwnerAt x={OWN.x} y={OWN.y} w={OWN.w} pose={o} />
 
-        {/* phone glow + phone */}
-        {pocketed < 1 && glow > 0 && (
-          <div style={{position: 'absolute', left: phone.x - 160, top: phone.y - 160, width: 320, height: 320, borderRadius: '50%', background: `radial-gradient(closest-side, rgba(42,128,119,${0.45 * glow}), rgba(183,216,197,${0.18 * glow}) 60%, rgba(183,216,197,0))`}} />
-        )}
-        {pocketed < 1 && (
+        {/* phone */}
+        {pocketed < 1 && !inHand && (
           <div style={{position: 'absolute', left: phone.x - phoneW / 2, top: phone.y - phoneW + pocketed * 40, perspective: 700, transform: `scale(${1 - pocketed})`, transformOrigin: '50% 100%'}}>
-            <div style={{transformStyle: 'preserve-3d', transform: `rotateZ(${lerp(-8, 4, show)}deg) rotateX(${lerp(10, 4, show)}deg) rotateY(${lerp(-22, 28, show) + spin * 360}deg)`}}>
+            <div style={{transformStyle: 'preserve-3d', transform: `scale(${handover}) rotateZ(${lerp(-8, 4, show)}deg) rotateX(${lerp(10, 4, show)}deg) rotateY(${lerp(-22, 28, show) + spin * 360}deg)`}}>
               <Phone w={phoneW} flip={1} ringing={0} screen={spin < 0.5 ? 'maps' : 'missed'} t={t} glow={glow} />
             </div>
           </div>

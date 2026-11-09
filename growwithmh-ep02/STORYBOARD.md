@@ -101,3 +101,25 @@ npm run studio                                                          # live p
 | SEO claims | See "SEO accuracy check" above. Nothing on screen promises rankings or invents statistics. |
 
 Limits of this QA: I can't watch or listen in real time. Motion was checked through dense frame strips, and audio through loudness, silence, cue timing and stem-level measurements. Give it one playback on a phone before posting.
+
+## Revision 1 · opening animation (0.0–4.0 s, plus the phone hold until 7.5 s)
+- **Phone grip in the rig:** the phone is now drawn inside the owner's right hand, so it moves with the forearm and wrist and cannot drift.
+  - It is held at waist to lower-chest height, with the screen toward his face, so the camera sees its back.
+  - The fingers wrap the inner edge, the thumb runs along the outer edge, and the heel of the palm cradles the bottom.
+  - The wrist stays aligned with the forearm.
+- **New rig controls:**
+  - Forearm foreshortening (`fL` / `fR`), so a forearm can come toward camera while the elbow stays at the side. A thin sleeve edge and contact shadow keep the arm readable against the jacket.
+  - Held-phone parameters: `phoneR`, `phoneGlow`, `phoneTurn` and `phoneBuzz`.
+  - All of these default to the previous look, so other scenes are unchanged.
+- **Acting on "What if Google Maps could actually talk?":**
+  - 0.0–0.86: he reads the phone.
+  - 0.86–1.31: his gaze lifts to the audience, with brows up and a head tilt.
+  - 1.0–2.5: a small palm-up with the free hand, elbow by the torso, forearm forward, peaking on "talk?" (2.02–2.36).
+  - 2.56–3.0: the hand returns to rest.
+  - 2.60: the buzz brings his eyes back down to the screen.
+- **When the assistant appears (3.13):** his eyes follow it up and then across. A small startled reaction: lean back 3°, shoulders up a touch, brows up, eyes wide, a small "o" mouth. The phone stays in his hand with no snap or spin. He settles at 3.69.
+- **Transition (minimal):** the same natural hold continues to 7.3 s. When he shows the missed calls, the phone turns edge-on in his grip and the 3D prop takes over at that instant, growing to its approved size as the turn completes (7.66). From 7.63 s every frame matches the approved render.
+- **Unchanged:** the VO, script, subtitles, music, SFX, mix (byte-identical md5), duration (60.533 s), camera moves, and the character and assistant designs.
+- **QA:**
+  - Strips at 10 and 30 fps through 0–4.3 s and the 7.1–7.8 s handoff show no pops, no floating phone, and no rotation of the phone inside the grip.
+  - Loudness is -14.1 LUFS with a true peak of -1.9 dBTP. There are no black frames or freezes, and a full decode reports 0 errors.

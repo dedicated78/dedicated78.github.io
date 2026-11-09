@@ -30,10 +30,20 @@ export const handAt = (pose: OwnerPose, side: 'L' | 'R'): Pt => {
   const e = side === 'L' ? pose.aLe : pose.aRe;
   const a1 = s * dir;
   const a2 = a1 - e * dir;
+  const L = Math.max(0.3, Math.min(1, side === 'L' ? pose.fL : pose.fR));
   const sh = shoulder(side, pose);
   const el = {x: sh.x + UPPER * down(a1).x, y: sh.y + UPPER * down(a1).y};
-  const h = {x: el.x + FORE * down(a2).x, y: el.y + FORE * down(a2).y};
+  const fore = (FORE - 6) * L + 6; // matches the drawing: the hand moves by (L-1)·90 along the forearm
+  const h = {x: el.x + fore * down(a2).x, y: el.y + fore * down(a2).y};
   return body(h, pose);
+};
+
+/** Centre of the phone held in the screen-right hand (viewBox, body transform included). */
+export const phoneAt = (pose: OwnerPose, grip: {angle: number; cy: number}): Pt => {
+  const palm = handAt(pose, 'R');
+  // hand-space rotation for the right arm: rotate(-s) · rotate(+e) · rotate(-w), then the grip angle
+  const a = rad(-pose.aRs + pose.aRe - pose.wR + grip.angle + pose.lean);
+  return {x: palm.x - grip.cy * Math.sin(a), y: palm.y + grip.cy * Math.cos(a)};
 };
 
 /**
