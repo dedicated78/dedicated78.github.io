@@ -46,7 +46,7 @@ test "$(ls "$SEQ" | wc -l)" -eq "$FRAMES"
 
 # Mix: music ducked by the VO (sidechain) and sat well under it; SFX slightly under the VO.
 MIX="[1:a]asplit=2[vo][vokey];\
-[2:a]volume=-5dB[mus];[mus][vokey]sidechaincompress=threshold=0.02:ratio=8:attack=15:release=350:makeup=1[musd];\
+[2:a]volume=-10dB[mus];[mus][vokey]sidechaincompress=threshold=0.02:ratio=8:attack=15:release=350:makeup=1[musd];\
 [3:a]volume=-1dB[sfx];\
 [vo][musd][sfx]amix=inputs=3:normalize=0:duration=longest"
 ffmpeg -v error -y -f lavfi -i "anullsrc=r=48000:cl=stereo" -i public/audio/vo.wav -i public/audio/music.wav -i public/audio/sfx.wav \

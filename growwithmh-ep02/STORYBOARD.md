@@ -81,3 +81,23 @@ npm ci
 npm run render -- --browser-executable=/path/to/chrome-headless-shell   # writes out/growwithmh-ep02.mp4
 npm run studio                                                          # live preview with audio
 ```
+
+## QA summary (final MP4: out/growwithmh-ep02.mp4)
+| Check | Result |
+|---|---|
+| File | H.264 High, yuv420p, 1080x1920, 30 fps, 1816 frames; AAC 48 kHz. Video 60.533 s, audio 60.533 s. A full decode reports 0 errors. |
+| Loudness | -14.1 LUFS integrated, LRA 3.5 LU, true peak -1.9 dBTP. |
+| Dialogue vs music | During speech the ducked music is 17–18 LU under the VO (-21.9 / -21.0 LUFS VO against -39.1 / -39.2 LUFS music). |
+| Black frames > 0.2 s | None. |
+| Frozen video > 2 s | None. |
+| Silence > 0.5 s | 54.23–55.08 s only. This is the intended comedic freeze after "ignoring your profile." The end card is never silent: a soft chord fades out exactly on the last frame. |
+| First frame | Opens on the owner in close-up with the phone. No logo intro. |
+| Representative frames | A contact sheet every 1.5 s plus 38 review stills cover all six scenes. Fixed during review: the phone covering his mouth in the close-up, the off-frame emergence, kicker width beyond the safe margins, the hours card being too small, and the owner being cropped during the category shot. |
+| Gestures at half speed | Strips at 10 fps covered the full rest → peak → rest cycle of the phone-show, hand-to-chest, facepalm, nervous clasp, two-palm shrug and one-palm question. There are no snaps between poses. Elbows stay low under the hands, and no hand passes through the body. The scene 05 question uses the same keyframes as the approved Episode 01 correction. A half-speed review clip is included. |
+| Faces vs dialogue | The pupils, brows, blush, sweat and nod were checked against each line. The assistant only moves its eyes and brow, tilts, and turns away. |
+| Subtitles | Words come from the transcript and are mapped to the approved script spelling. They highlight on their spoken onset, at most 4 words per caption, with speaker tags. They sit inside y 1404–1560 and are hidden on the end card. Kickers stay within x 90–990. |
+| Consistency with Episode 01 | Same character models, Card3D system, studio, palette (#FBFAF6, teal, charcoal, amber), caption style and end-card motion. |
+| Logo | The supplied file is used unaltered on the end-card tile. |
+| SEO claims | See "SEO accuracy check" above. Nothing on screen promises rankings or invents statistics. |
+
+Limits of this QA: I can't watch or listen in real time. Motion was checked through dense frame strips, and audio through loudness, silence, cue timing and stem-level measurements. Give it one playback on a phone before posting.

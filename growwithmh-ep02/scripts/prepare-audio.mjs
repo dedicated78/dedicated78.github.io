@@ -287,6 +287,20 @@ const music = [new Float32Array(N), new Float32Array(N)];
     music[1][n] = v * g * (1 + w * 0.5);
   }
 }
+// end card: one soft resolving chord under the logo, fading out exactly on the last frame
+{
+  const a = C.grow - 0.05;
+  const notes = [48, 55, 59, 62, 64, 67].map((m) => 440 * 2 ** ((m - 69) / 12));
+  for (let n = Math.round(a * SR); n < N; n++) {
+    const t = n / SR - a;
+    const env = Math.min(1, t / 0.6) * Math.min(1, (DUR - a - t) / 1.8);
+    let v = 0;
+    for (const f of notes) v += (Math.sin(TAU * f * (a + t)) + 0.2 * Math.sin(TAU * 2 * f * (a + t))) * 0.045;
+    const w = Math.sin(TAU * 0.2 * t) * 0.12;
+    music[0][n] += v * env * (1 - w);
+    music[1][n] += v * env * (1 + w);
+  }
+}
 writeWav('public/audio/music.wav', music[0], music[1]);
 
 // ---------- SFX (synthesized, restrained)
