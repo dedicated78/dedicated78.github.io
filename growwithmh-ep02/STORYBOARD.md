@@ -130,3 +130,14 @@ Limits of this QA: I can't watch or listen in real time. Motion was checked thro
   - Only the heel of the palm shows under the lower edge, with a slim, flat sliver of fingertips past the inner edge, drawn behind the phone.
 - **Unchanged:** the phone position, angle and hand side, the arm pose, the character, the expressions, the camera, the subtitles and the audio (byte-identical md5).
 - Only the 221 frames showing the hand-held phone (0–7.33 s) differ from Revision 1. Duration is still 60.533 s, loudness -14.1 LUFS and true peak -1.9 dBTP. A full decode reports 0 errors.
+
+## Revision 3 · smartphone grip mechanics (0.0–7.3 s)
+- **Grip mechanics follow the two supplied reference images; their characters and styles were not copied.**
+  - The phone is in his anatomical left hand with the screen toward him.
+  - The back of his hand comes out of the sleeve at the phone's outer edge.
+  - Three simplified fingers lie across the lower back of the phone (about 40% of it) and curl around the inner edge.
+  - The thumb stays on the screen side, with only its tip showing past the outer edge.
+  - The rounded palm and cuff that sat under the phone are no longer drawn while the phone is held, so the phone no longer looks balanced on a palm.
+- The hand geometry lives in the phone's own frame, so the fingers follow the phone's perspective and stay attached through the buzz, the recoil and the turn.
+- **Unchanged:** the phone position, angle and size, the arm pose, the other hand, the character, the expressions, the camera, the subtitles, the timing and the audio (byte-identical md5).
+- Only the 221 hand-held-phone frames (0–7.33 s) changed. Duration is still 60.533 s, loudness -14.1 LUFS and true peak -1.9 dBTP. A full decode reports 0 errors.

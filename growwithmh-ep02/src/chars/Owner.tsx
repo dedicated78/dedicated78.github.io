@@ -89,19 +89,23 @@ const OpenHand: React.FC<{h: number; k: number}> = ({h, k}) => {
   );
 };
 
-/** Phone held toward his face, drawn in the hand's own space (palm centre at 0,0). The screen faces
- * him, so the camera sees the phone's back and the hand supports it from behind: only the heel of the
- * palm shows under the lower edge and a slim, flat sliver of fingertips past the inner edge. No finger
- * or thumb is drawn on the audience-facing back. `k` = +1 for the screen-right hand. */
+/** Phone held toward his face in his anatomical left hand (screen-right), drawn in the hand's own
+ * space (palm centre at 0,0; phone long axis along y). The screen faces him, so the audience sees the
+ * phone's back and the back of his hand: it comes out of the sleeve at the outer edge, three simple
+ * fingers lie across the lower back and curl round the inner edge, and the thumb stays on the screen
+ * side (only its tip shows at the outer edge). `k` = +1 for the screen-right hand. */
 export const PHONE_GRIP = {angle: -38, cy: -36};
+const FINGER_Y = [-35, -26.5, -18]; // index, middle, ring across the back; pinky tucked under the hand
 const HeldPhone: React.FC<{k: number; glow: number; turn: number; buzz: number}> = ({k, glow, turn, buzz}) => {
   const sx = Math.max(0.04, Math.cos(Math.PI * 0.5 * Math.min(1, turn * 1)));
-  const inner = k > 0 ? -1 : 1; // the edge toward his body
+  const X = (x: number) => x * k; // mirror for the other hand
+  const finger = (y: number, i: number) => `M${X(6)},${y} Q${X(-9)},${y - 1.2} ${X(-20)},${y + 0.4} Q${X(-24.5)},${y + 1.2} ${X(-25.5)},${y + 4 + i * 0.3}`;
+  const handPath = `M${X(28)},${-36} C${X(33)},${-28} ${X(33)},${-9} ${X(25)},${-3} C${X(17)},${2} ${X(6)},${0} ${X(2)},${-6} L${X(1)},${-34} C${X(7)},${-41} ${X(22)},${-42} ${X(28)},${-36} Z`;
   return (
     <g transform={`translate(${buzz} 0) rotate(${PHONE_GRIP.angle * k}) scale(${sx} 1)`}>
-      {/* fingertips behind the phone: only a thin flat edge peeks past the inner side */}
-      <rect x={inner < 0 ? -28 : 16} y={-50} width={12} height={34} rx={5} fill={SKIN_SH} />
-      <rect x={inner < 0 ? -27 : 17} y={-49} width={10} height={32} rx={4.5} fill={SKIN} />
+      {/* thumb on the screen side: only its tip shows past the outer edge */}
+      <rect x={k > 0 ? 18 : -29} y={-52} width={11} height={15} rx={5.5} fill={SKIN_SH} />
+      <rect x={k > 0 ? 19 : -28} y={-51} width={9} height={13} rx={4.5} fill={SKIN} />
       {/* back of the phone (screen faces his face) */}
       <rect x={-24} y={-80} width={48} height={88} rx={10} fill="url(#phoneBack)" stroke="#0A1A19" strokeWidth={1.5} />
       <rect x={-24 + (k > 0 ? 30 : 4)} y={-72} width={14} height={16} rx={4} fill="#0B1F1D" />
@@ -109,6 +113,19 @@ const HeldPhone: React.FC<{k: number; glow: number; turn: number; buzz: number}>
       <circle cx={-17 + (k > 0 ? 30 : 4) + 7} cy={-60} r={2.6} fill="#2E5550" />
       {/* light from the screen catching the top edge */}
       <rect x={-21} y={-82} width={42} height={3.5} rx={1.75} fill="#B7D8C5" opacity={0.45 + 0.5 * glow} />
+      {/* back of the hand + fingers over the lower back of the phone (one silhouette, then fills) */}
+      <path d={handPath} fill="none" stroke={SKIN_SH} strokeWidth={3} strokeLinejoin="round" />
+      {FINGER_Y.map((y, i) => (
+        <path key={`o${i}`} d={finger(y, i)} stroke={SKIN_SH} strokeWidth={11} strokeLinecap="round" fill="none" />
+      ))}
+      <path d={handPath} fill={SKIN} />
+      {FINGER_Y.map((y, i) => (
+        <path key={`f${i}`} d={finger(y, i)} stroke={SKIN} strokeWidth={8.4} strokeLinecap="round" fill="none" />
+      ))}
+      {/* fine separations between fingers, no extra anatomy */}
+      {[-30.8, -22.3].map((y) => (
+        <path key={y} d={`M${X(3)},${y} Q${X(-8)},${y - 0.6} ${X(-18)},${y + 0.5}`} stroke={SKIN_SH} strokeWidth={1.4} strokeLinecap="round" fill="none" opacity={0.8} />
+      ))}
     </g>
   );
 };
@@ -129,13 +146,17 @@ const Arm: React.FC<{side: 'L' | 'R'; s: number; e: number; h?: number; w?: numb
         {L < 0.98 && <rect x={-16} y={2} width={40} height={4 + 82 * L} rx={18} fill="rgba(6,30,28,0.28)" transform="translate(5 6)" />}
         <rect x={-18} y={-4} width={36} height={4 + 82 * L} rx={18} fill={`url(#suitArm${side})`} stroke={L < 0.98 ? 'rgba(6,30,28,0.55)' : undefined} strokeWidth={L < 0.98 ? 2.5 : undefined} />
         {L < 0.98 && <path d={`M-10,8 Q-13,${40 * L} -8,${76 * L}`} stroke="rgba(255,255,255,0.22)" strokeWidth={5} fill="none" strokeLinecap="round" />}
-        <rect x={-17} y={70 * L + 12 * (1 - L)} width={34} height={14} rx={6} fill={C.cream} />
+        {!(phone && phone.on > 0.5) && <rect x={-17} y={70 * L + 12 * (1 - L)} width={34} height={14} rx={6} fill={C.cream} />}
         <g transform={`translate(0 ${(L - 1) * 90}) rotate(${-w * k} 0 82)`}>
           {open > 0.001 && <OpenHand h={open} k={k} />}
-          {/* palm: the relaxed fist flattens into an open palm as the hand opens */}
-          <ellipse cx={0} cy={96 + 4 * open} rx={22 - 5 * open} ry={22 + 1 * open} fill="url(#skin)" />
-          {open > 0.001 && <ellipse cx={6 * k} cy={100} rx={9 * open} ry={14 * open} fill="#F6CDA9" opacity={0.55 * open} />}
-          <ellipse cx={-6 * dir} cy={90} rx={8} ry={5} fill="rgba(255,255,255,0.25)" />
+          {/* palm: the relaxed fist flattens into an open palm as the hand opens (the phone hand is drawn with the phone) */}
+          {!(phone && phone.on > 0.5) && (
+            <>
+              <ellipse cx={0} cy={96 + 4 * open} rx={22 - 5 * open} ry={22 + 1 * open} fill="url(#skin)" />
+              {open > 0.001 && <ellipse cx={6 * k} cy={100} rx={9 * open} ry={14 * open} fill="#F6CDA9" opacity={0.55 * open} />}
+              <ellipse cx={-6 * dir} cy={90} rx={8} ry={5} fill="rgba(255,255,255,0.25)" />
+            </>
+          )}
           {phone && phone.on > 0.5 && (
             <g transform="translate(0 96)">
               <HeldPhone k={k} glow={phone.glow} turn={phone.turn} buzz={phone.buzz} />
