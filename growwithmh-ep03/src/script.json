@@ -1,0 +1,23 @@
+{
+  "title": "I Added 20 Cities. I'm Famous Everywhere!",
+  "leadIn": 0.3,
+  "tail": 2.3,
+  "lines": [
+    {"id": "L01", "who": "owner", "text": "I did it! I added 20 cities to my Google Business Profile.", "gapAfter": 0.35},
+    {"id": "L02", "who": "owner", "text": "Brooklyn, Queens, Manhattan. I'm taking over New York.", "gapAfter": 1.7, "why": "fantasy pose holds, then everything freezes as the assistant rises"},
+    {"id": "L03", "who": "assistant", "text": "Congratulations. You made a list.", "gapAfter": 0.5},
+    {"id": "L04", "who": "owner", "text": "Wait, so I'll rank number one in all 20?", "gapAfter": 0.3},
+    {"id": "L05", "who": "assistant", "text": "Sir, this is a service area setting, not a teleportation device.", "gapAfter": 1.3, "why": "he tries the portal; it collapses into a map pin"},
+    {"id": "L06", "who": "owner", "text": "But I clicked save!", "gapAfter": 0.35},
+    {"id": "L07", "who": "assistant", "text": "Yes, your thumb worked perfectly.", "gapAfter": 0.8, "why": "comedic pause on the thumbs-up"},
+    {"id": "L08", "who": "owner", "text": "Then what did I actually accomplish?", "gapAfter": 0.3},
+    {"id": "L09", "who": "assistant", "text": "You told customers where you're willing to work.", "gapAfter": 0.55},
+    {"id": "L10", "who": "narrator", "text": "Adding more service areas doesn't automatically improve your Google Maps rankings.", "gapAfter": 0.35},
+    {"id": "L11", "who": "narrator", "text": "Local visibility mainly depends on relevance, distance, and prominence.", "gapAfter": 0.4},
+    {"id": "L12", "who": "narrator", "text": "Choose areas you actually serve.", "gapAfter": 0.3},
+    {"id": "L13", "who": "narrator", "text": "Keep your business information accurate and build a stronger local presence.", "gapAfter": 0.6},
+    {"id": "L14", "who": "owner", "text": "So I'm not famous everywhere?", "gapAfter": 0.3},
+    {"id": "L15", "who": "assistant", "text": "20 cities. Zero superpowers.", "gapAfter": 1.0, "why": "cape appears and falls; short comedic pause"},
+    {"id": "L16", "who": "narrator", "text": "GrowwithMH. Get found. Grow smarter.", "gapAfter": 0}
+  ]
+}
