@@ -1,0 +1,23 @@
+{
+  "title": "My Cousin Gave Me 50 Five-Star Reviews!",
+  "leadIn": 0.3,
+  "tail": 2.3,
+  "silence": 1.3,
+  "lines": [
+    {"id": "L01", "who": "owner", "src": [0, 0, 9], "text": "Fifty five-star reviews overnight! My cousin deserves a medal!", "gapAfter": 0.3},
+    {"id": "L02", "who": "owner", "src": [0, 10, 18], "text": "He made 50 accounts! Look at that perfect rating!", "gapAfter": 1.5, "why": "still celebrating as the counter slips 50 → 48 → 42 → 35"},
+    {"id": "L03", "who": "owner", "src": [1, 0, 5], "text": "Wait... why are my reviews decreasing?!", "gapAfter": 0.3},
+    {"id": "L04", "who": "owner", "src": [1, 6, 10], "text": "50... 30... 10?! Zero?! What?!", "gapAfter": 2.25, "why": "1.3 s of complete silence, then the Review Bot rolls in"},
+    {"id": "L05", "who": "bot", "src": [4, 0, 6], "text": "Review check complete. Those reviews were fake.", "gapAfter": 0.95, "why": "the Maps Assistant rises"},
+    {"id": "L06", "who": "owner", "src": [1, 11, 15], "text": "But they're all five stars!", "gapAfter": 0.35},
+    {"id": "L07", "who": "assistant", "src": [5, 0, 7], "text": "Five stars don't make 50 fake accounts real.", "gapAfter": 0.4},
+    {"id": "L08", "who": "assistant", "src": [5, 8, 16], "text": "That's not customer feedback. That's your cousin's fan club.", "gapAfter": 0.6},
+    {"id": "L09", "who": "assistant", "src": [6, 0, 11], "text": "Google can remove fake reviews, and your Business Profile may face restrictions.", "gapAfter": 0.45},
+    {"id": "L10", "who": "owner", "src": [2, 0, 8], "text": "So... how am I supposed to get reviews now?", "gapAfter": 0.4},
+    {"id": "L11", "who": "assistant", "src": [7, 0, 18], "text": "Want real reviews? Ask genuine customers for honest feedback. No rewards, no pressure, and no asking only happy customers.", "gapAfter": 0.6},
+    {"id": "L12", "who": "owner", "src": [3, 0, 5], "text": "So... actual customers. What a concept.", "gapAfter": 0.35},
+    {"id": "L13", "who": "assistant", "src": [8, 0, 6], "text": "Apparently, customers are involved in customer reviews.", "gapAfter": 1.1, "why": "comedic beat; the bot nods"},
+    {"id": "L14", "who": "narrator", "src": [10, 0, 4], "text": "GrowwithMH. Real reviews. Real trust.", "gapAfter": 0}
+  ],
+  "omitted": [{"src": [9, 0, 17], "text": "Fake and incentivized Google reviews violate Google's policies. They may be removed, and business profiles can face restrictions.", "why": "not in the brief's 15-step dialogue order ('Do not introduce additional dialogue'); kept out pending approval"}]
+}

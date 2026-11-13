@@ -1,0 +1,23 @@
+{
+  "name": "growwithmh-ep01",
+  "private": true,
+  "version": "1.0.0",
+  "description": "GrowwithMH 'What If? SEO Edition' Episode 01: Google Verified Me. Where Are My Customers?",
+  "scripts": {
+    "audio": "node scripts/prepare-audio.mjs",
+    "studio": "remotion studio src/index.ts",
+    "render": "bash scripts/render.sh",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fontsource/poppins": "5.2.6",
+    "@remotion/cli": "4.0.300",
+    "react": "19.1.0",
+    "react-dom": "19.1.0",
+    "remotion": "4.0.300"
+  },
+  "devDependencies": {
+    "@types/react": "19.1.0",
+    "typescript": "5.8.3"
+  }
+}
