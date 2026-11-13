@@ -68,3 +68,19 @@ All timing comes from the supplied ElevenLabs VO. Word onsets come from local Wh
   - That the bot is Google's real system.
   - That genuine reviews guarantee rankings.
 - **Framing:** the 50 → 0 drop is tagged DRAMATIZATION, and every business, reviewer and review is fictional.
+
+## QA summary (final MP4: out/growwithmh-ep04.mp4)
+| Check | Result |
+|---|---|
+| File | H.264 High, yuv420p, 1080x1920, 30 fps, 1898 frames; AAC 48 kHz. Video and audio are both 63.267 s. A full decode reports 0 errors. |
+| Loudness | -14.5 LUFS integrated, LRA 4.5 LU, true peak -1.6 dBTP. |
+| **Mandatory silence** | In the encoded MP4: 16.206–17.553 s below -60 dB (1.35 s). Max level inside the window is -91 dB, the encoder floor. Every stem is exactly zero over 16.213–17.513 s. The picture is frozen: from 16.67 s every frame is pixel-identical (the only change before that is the "Zero?! What?!" subtitle finishing its fade). |
+| Story order | Celebration (0–8.1) → reviews vanish (8.1) → confusion (9.7) → panic (12.4) → counter hits 0 on "Zero" (14.48) → silence (16.21–17.51) → Review Bot (17.51) → Maps Assistant rises (21.96) → explanation → how to get real reviews → punchline → outro (57.19). |
+| Counter | 5 → 15 → 30 → 50, then 48 → 42 → 35 while he celebrates, then 30 / 20 / 10 / 0 on his spoken numbers. |
+| Black frames / freezes | None. The other quiet gaps (22.52–23.03 and 56.97–57.78) are the planned beats after the assistant's entrance and after the punchline. |
+| Line cuts | Every cut edge is -51 to -89 dB in the source. Every word sits inside its own clip, in order. L13 ends in true silence before the omitted line begins. |
+| Gestures | Strips at 10 fps cover the celebration, the smile fading, the panic into the freeze, and the plea. There are no snaps; elbows stay under the hands. There are no phones or handheld props; the bot only scans and nods. |
+| Subtitles | Word-synced with speaker tags OWNER / REVIEW BOT / MAPS ASSISTANT / GROWWITHMH. They sit inside y 1404–1560 and hide on the end card. |
+| Branding | Series palette, studio, captions and end card. The logo is the clean app-icon version you attached, used unaltered. |
+
+Limits of this QA: I can't watch or listen in real time. Motion was checked through frame strips, and audio through loudness, silence, cut-edge and level measurements. Give it one full playback with sound, especially through the silence and the bot's entrance.
