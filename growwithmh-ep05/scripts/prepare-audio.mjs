@@ -440,6 +440,8 @@ SFX.click(C.higher, 0.16, 0.3);
 SFX.whoosh(C.L13 - 0.35, 0.4, 0.1, -0.2, 0.2);
 SFX.shrink(C.shrink, 0.18);
 // outro
+SFX.impact(C.outro + 0.08, 0.14); // statement chip lands: ORGANIC RANKINGS AREN'T FOR SALE.
+SFX.whoosh(C.grow - 0.3, 0.45, 0.08, -0.2, 0.2); // chip lifts away for the lockup
 SFX.logo(C.grow - 0.05, 0.42);
 
 silence(fx[0]);

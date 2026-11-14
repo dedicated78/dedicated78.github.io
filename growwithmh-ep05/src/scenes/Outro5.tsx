@@ -14,14 +14,18 @@ const WM = {size: 104, cy: 845};
 const DOT = {x: 540 + 345, y: WM.cy + 26};
 
 export const Outro5: React.FC<{t: number}> = ({t}) => {
-  const fly = pr(t, Q.outro + 0.05, 0.5, EZ.inOut);
+  // the check flies in only once the statement chip has lifted away (it becomes the wordmark dot)
+  const A = Q.grow - 0.1;
+  const fly = pr(t, A, 0.5, EZ.inOut);
   const logoIn = pr(t, Q.grow - 0.15, 0.6, EZ.back);
   const reveal = pr(t, Q.grow + 0.05, 0.55, EZ.inOut);
   const settle = pr(t, Q.grow, 0.8, EZ.out);
   const gx = lerp(560, DOT.x, fly);
   const gy = lerp(1150, DOT.y, fly);
-  const gd = lerp(84, WM.size * 0.2, pr(t, Q.outro + 0.35, 0.35, EZ.inOut));
-  const dotOn = t >= Q.outro + 0.6;
+  const gd = lerp(84, WM.size * 0.2, pr(t, A + 0.3, 0.35, EZ.inOut));
+  const dotOn = t >= A + 0.55;
+  const chipIn = pr(t, Q.outro + 0.05, 0.4, EZ.back);
+  const chipUp = pr(t, Q.grow - 0.25, 0.6, EZ.inOut);
   const l1 = pr(t, Q.getFound, 0.4, EZ.back);
   const l2 = pr(t, Q.smarter, 0.4, EZ.back);
   const sweep = pr(t, Q.grow + 0.45, 0.9, EZ.inOut);
@@ -44,7 +48,7 @@ export const Outro5: React.FC<{t: number}> = ({t}) => {
           {gd > 40 && <Icon name="check" size={gd * 0.55} color={C.cream} stroke={3.2} />}
         </div>
       )}
-      <div style={{position: 'absolute', left: 0, right: 0, top: lerp(860, 300, pr(t, Q.grow - 0.25, 0.6, EZ.inOut)), display: 'flex', justifyContent: 'center', opacity: pr(t, Q.outro + 0.05, 0.3), transform: `scale(${lerp(1, 0.62, pr(t, Q.grow - 0.25, 0.6, EZ.inOut))})`}}>
+      <div style={{position: 'absolute', left: 0, right: 0, top: lerp(860, 300, chipUp), display: 'flex', justifyContent: 'center', opacity: Math.min(1, chipIn * 2), transform: `scale(${lerp(1.3, 0.62, chipUp) * (0.8 + 0.2 * chipIn)})`}}>
         <div style={{padding: '18px 34px', borderRadius: 28, background: C.charcoal, boxShadow: '0 20px 40px -18px rgba(25,43,42,0.6)'}}>
           <div style={{fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: 60, letterSpacing: '0.01em', color: C.cream, textAlign: 'center', lineHeight: 1.1}}>
             ORGANIC RANKINGS

@@ -138,7 +138,7 @@ const camAt = (t: number): Cam => {
   mv(k(Q.L02 - 0.25, 0.9), 610, 930, 1.04); // board + stage + the bidder
   mv(k(Q.L03 - 0.2, 0.6), 560, 930, 1.06);
   mv(k(Q.sold + 0.45, 0.6), 540, 900, 1.06);
-  mv(k(Q.stop + 0.05, 0.6), CARD.x, CARD.y + 40, 1.45); // push in: the listing
+  mv(k(Q.stop + 0.05, 0.6), CARD.x - 80, CARD.y + 40, 1.45); // push in: the listing, his deadpan face in frame
   mv(k(Q.L06 - 0.1, 0.7), 540, 820, 1.12); // back out enough to see his face
   mv(k(Q.rise - 0.1, 0.8), 580, 920, 1.02);
   mv(k(Q.L08 - 0.2, 0.6), 520, 940, 1.1);
