@@ -1,0 +1,176 @@
+{
+  "title": "What If Google Rankings Were an Auction?",
+  "leadIn": 0.5,
+  "tail": 2.3,
+  "lines": [
+    {
+      "id": "L01",
+      "who": "auctioneer",
+      "src": [
+        5,
+        0,
+        7
+      ],
+      "text": "Welcome to the number one Google Maps auction!",
+      "gapAfter": 0.35
+    },
+    {
+      "id": "L02",
+      "who": "auctioneer",
+      "src": [
+        6,
+        0,
+        2
+      ],
+      "text": "Opening bid! $100!",
+      "gapAfter": 0.45
+    },
+    {
+      "id": "L03",
+      "who": "owner",
+      "src": [
+        0,
+        0,
+        6
+      ],
+      "text": "$500! Make my roofing company number one!",
+      "gapAfter": 0.35
+    },
+    {
+      "id": "L04",
+      "who": "auctioneer",
+      "src": [
+        7,
+        0,
+        5
+      ],
+      "text": "$500! Going once, going twice, SOLD!",
+      "gapAfter": 0.6,
+      "why": "gavel, AUCTION WON! banner"
+    },
+    {
+      "id": "L05",
+      "who": "owner",
+      "src": [
+        1,
+        0,
+        4
+      ],
+      "text": "Yes! Finally! Google Maps domination!",
+      "gapAfter": 0.95,
+      "why": "music cuts at stop, 'Sponsored' pops 0.35 s later, then a ~0.75 s comedic pause before 'Wait...'"
+    },
+    {
+      "id": "L06",
+      "who": "owner",
+      "src": [
+        2,
+        0,
+        6
+      ],
+      "text": "Wait, why does my listing say Sponsored?",
+      "gapAfter": 0.9,
+      "why": "the Maps Assistant rises only after the question"
+    },
+    {
+      "id": "L07",
+      "who": "assistant",
+      "src": [
+        8,
+        0,
+        7
+      ],
+      "text": "Because you bought advertising, not an organic ranking.",
+      "gapAfter": 0.35
+    },
+    {
+      "id": "L08",
+      "who": "owner",
+      "src": [
+        3,
+        0,
+        8
+      ],
+      "text": "So... I didn't buy the number-one organic spot?",
+      "gapAfter": 0.35
+    },
+    {
+      "id": "L09",
+      "who": "assistant",
+      "src": [
+        9,
+        0,
+        10
+      ],
+      "text": "Sir, there's no checkout button for number one on Google Maps.",
+      "gapAfter": 0.6
+    },
+    {
+      "id": "L10",
+      "who": "narrator",
+      "src": [
+        11,
+        0,
+        7
+      ],
+      "text": "Google Maps can display paid ads marked Sponsored,",
+      "gapAfter": 0.3
+    },
+    {
+      "id": "L11",
+      "who": "narrator",
+      "src": [
+        12,
+        0,
+        9
+      ],
+      "text": "but advertising doesn't buy you a higher organic local ranking.",
+      "gapAfter": 0.35
+    },
+    {
+      "id": "L12",
+      "who": "narrator",
+      "src": [
+        13,
+        0,
+        9
+      ],
+      "text": "Organic local visibility mainly depends on relevance, distance, and prominence.",
+      "gapAfter": 0.6
+    },
+    {
+      "id": "L13",
+      "who": "owner",
+      "src": [
+        4,
+        0,
+        9
+      ],
+      "text": "Great. I bought an ad... and a tiny imaginary trophy.",
+      "gapAfter": 0.35
+    },
+    {
+      "id": "L14",
+      "who": "assistant",
+      "src": [
+        10,
+        0,
+        5
+      ],
+      "text": "Congratulations. Your trophy is non-refundable.",
+      "gapAfter": 2.0,
+      "why": "short pause; the trophy shrinks; then 'ORGANIC RANKINGS AREN'T FOR SALE.' before the lockup"
+    },
+    {
+      "id": "L15",
+      "who": "narrator",
+      "src": [
+        14,
+        0,
+        6
+      ],
+      "text": "GrowwithMH. Get found. Grow smarter.",
+      "gapAfter": 0
+    }
+  ]
+}
