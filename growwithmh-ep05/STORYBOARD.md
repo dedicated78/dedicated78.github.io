@@ -54,6 +54,24 @@
 - **Not confirmed by those pages:** they don't use the literal word "Sponsored" for the Maps ad label. The episode's "marked Sponsored" line comes from the supplied script, and the cited pages don't state that label word for word. See Limitations.
 
 ## QA summary (final MP4)
-QA_TABLE
+| Check | Result |
+|---|---|
+| File | H.264 High, yuv420p, 1080x1920, 30 fps, 1892 frames; AAC LC 48 kHz stereo. Video is 63.067 s and audio 63.066 s. A full decode reports 0 errors. |
+| Loudness | -14.4 LUFS integrated, LRA 4.7 LU, sample peak -1.8 dBFS. |
+| **Sponsored pause** | In the encoded MP4 the audio is below -45 dB from 19.35 to 20.02 s, broken only by the label tick. The music is cut from 18.91 s (record scratch) and returns at L07. The label pops at 19.26 s and "Wait..." starts at 20.02 s, a 0.75 s comedic pause. |
+| Other quiet gaps | 20.28–20.65 is the breath inside L06 ("Wait, ... why"). 23.12–23.72 is the beat while the Maps Assistant rises. 56.81–57.43 is the hold on the statement chip, after its landing hit and before the logo whoosh. All are planned. |
+| Black frames / freezes | None. No black frame of 0.2 s or more, and no frozen stretch of 2 s or more. |
+| Story order | Fictional auction (0) → bids (4.2 / 7.1) → SOLD with the automated gavel (13.68) → celebration (15.4) → Sponsored discovery and pause (18.9–20.0) → Maps Assistant (22.6) → checkout NOT FOR SALE (33.0) → paid vs organic (35.4) → relevance/distance/prominence (44.8 / 45.4 / 46.5) → trophy punchline (47.8–55.6) → ORGANIC RANKINGS AREN'T FOR SALE (56.3) → lockup (57.7). |
+| Line cuts | Every cut edge is -49 dB or lower in the source. Every word sits inside its own clip, in order. All 15 recorded lines are used, and no word was edited or sped up. |
+| Gestures | Frame strips at 10 fps cover the bid raise, the number-one finger, the count clasp, the SOLD fist pumps, the deadpan at the pause, the palm-up question, the hand to the chest and the final sag. Hands stay attached, elbows sit under the hands, and there are no snaps. There are no phones, paddles or handheld gavels. |
+| Rendering glitch fixed | The SOLD flash on the bid board was an outer box-shadow on a 3D plane, which tore diagonally in Chrome. It is now an inset glow, verified on frames 13.7–14.0 s. |
+| Subtitles | Word-synced, at most 4 words, with speaker tags OWNER / AUCTIONEER / MAPS ASSISTANT / GROWWITHMH. They sit inside y 1404–1560 and hide on the end card. |
+| Branding | Series palette, studio, captions and end card. The logo is the attached file (byte-identical to the Ep02–03 logo), used unaltered. |
 
 Limits of this QA: I can't watch or listen in real time. Motion was checked through 10 fps frame strips and a contact sheet, and audio through loudness, silence, cut-edge and level measurements. Give it one full playback with sound, especially the Sponsored pause and the outro hold.
+
+## Limitations
+1. **"Sponsored" wording.** The two Google pages in the brief confirm the paid-vs-organic and ranking-factor claims, but neither uses the literal label "Sponsored". The line is from your script. Re-verify the label wording if you want a citation for it.
+2. **One voice for four roles.** All four roles are the same ElevenLabs voice, "Jack John". They are distinct by delivery and pitch: median pitch is owner about 250 Hz, auctioneer about 281 Hz, assistant about 213 Hz and narrator about 128 Hz. A dedicated auctioneer voice would sell the character more.
+3. **Runtime 63.07 s.** This sits inside the 55–65 s target. The beat after "non-refundable" was lengthened by 1 s so the statement chip reads before the lockup.
+4. **Music and SFX** are synthesized in-project (no licensed tracks or paid APIs).
