@@ -18,7 +18,7 @@ const OWN = {x0: 300, x1: 380, y: 1380, w: 380};
 const K = OWN.w / 400; // owner viewBox → world
 const PIN = {x: 960, y: 1335, w: 200};
 const TILE = {x: 960, y: 1352, size: 260};
-const PANEL = {x: 540, y: 450, s: 0.86};
+const PANEL = {x: 760, y: 450, s: 0.72}; // off to the right, so the opening close-up keeps him out of frame
 const GUEST = {x0: 1440, x1: 1190, xOut: 1500, y: 1384, w: 200};
 
 const bump = (t: number, a: number, d: number) => (t < a || t > a + d ? 0 : Math.sin((Math.PI * (t - a)) / d));
@@ -170,17 +170,19 @@ const pinPose = (t: number): PinPose => {
 // ---------------------------------------------------------------- camera
 const camAt = (t: number): Cam => {
   const k = (a: number, d: number, e = EZ.inOut) => pr(t, a, d, e);
-  let x = 540;
+  let x = PANEL.x;
   let y = PANEL.y + 10;
-  let s = lerp(1.32, 1.42, k(0, 3, EZ.linear)); // close on the two counts
+  let s = lerp(1.55, 1.65, k(0, 3, EZ.linear)); // close on the two counts
   const mv = (p: number, nx: number, ny: number, ns: number) => {
     x = lerp(x, nx, p);
     y = lerp(y, ny, p);
     s = lerp(s, ns, p);
   };
-  mv(k(Q.five - 0.75, 0.7), 470, 860, 0.95); // reveal the owner under the panel
-  mv(k(Q.five + 0.05, 0.3, EZ.out), 455, 860, 0.99); // a small push on his shock
-  mv(k(Q.L02 - 0.1, 0.7), 470, 900, 1.02);
+  // reveal the owner under the panel: he rises in at the left edge (clear of the centred caption box),
+  // then the camera settles on him as the 5 lands
+  mv(k(Q.five - 0.75, 0.7), 760, 860, 0.95);
+  mv(k(Q.five + 0.0, 0.4, EZ.inOut), 560, 860, 0.99);
+  mv(k(Q.L02 - 0.1, 0.7), 540, 900, 1.0);
   mv(k(Q.funeral, 1.0), 570, 1010, 1.0); // the tiny funeral
   mv(k(Q.goodbye, 1.4), 560, 1030, 1.08);
   mv(k(Q.deserved - 0.4, 1.0), 540, 1060, 1.18); // the flowers going down
@@ -211,7 +213,7 @@ export const Set6: React.FC<{t: number; fade?: number}> = ({t, fade = 1}) => {
   const n100 = Math.min(100, Math.round(100 * pr(t, Q.L01 + 0.1, Q.hundred - Q.L01 + 0.1, EZ.out)));
   const five = pr(t, Q.five - 0.05, 0.25, EZ.back);
   const shake = Math.sin(t * 60) * 7 * bump(t, Q.five, 0.4);
-  const fly = pr(t, Q.funeral + 0.05, 0.7, EZ.inOut);
+  const fly = pr(t, Q.dead + 0.05, 1.15, EZ.inOut); // into the memorial's picture frame
   const frame = {x: PLINTH.x + PLINTH.w * 0.55, y: PLINTH.y - 236 + 14 + 75};
 
   // lighting
@@ -369,7 +371,7 @@ export const Set6: React.FC<{t: number; fade?: number}> = ({t, fade = 1}) => {
       {/* kickers */}
       <Kicker t={t} at={Q.hundred} out={Q.five - 0.15} lines={[<Hl key="a">100 REVIEWS?!</Hl>]} size={96} top={200} />
       <Kicker t={t} at={Q.five} out={Q.L02 - 0.1} lines={[<span key="a">I HAVE <span style={{color: '#B5792C'}}>FIVE!</span></span>]} size={96} top={200} />
-      <Kicker t={t} at={Q.dead - 0.05} out={Q.funeral + 0.6} lines={[<span key="a">MY BUSINESS</span>, <Hl key="b">IS DEAD!</Hl>]} size={92} />
+      <Kicker t={t} at={Q.dead - 0.05} out={Q.funeral + 0.6} lines={[<span key="a">MY BUSINESS <Hl>IS DEAD!</Hl></span>]} size={74} top={200} />
       <Kicker t={t} at={Q.funeral + 0.85} out={Q.L03 + 0.9} lines={[<span key="a">RIP <Hl>MY GBP</Hl></span>]} size={92} />
       <Kicker t={t} at={Q.automatically} out={Q.L05e + 0.5} lines={[<span key="a">REVIEWS AREN&apos;T</span>, <Hl key="b">EVERYTHING</Hl>]} size={86} />
       <Kicker t={t} at={Q.keep13} out={Q.L13e + 0.9} lines={[<span key="a">KEEP THE <Hl>FLOWERS.</Hl></span>]} size={92} />
