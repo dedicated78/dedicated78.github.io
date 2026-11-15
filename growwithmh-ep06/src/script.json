@@ -1,0 +1,205 @@
+{
+  "note": "Episode 06 lines in the brief's mandatory order. src = [transcript entry, first word, last word]. Transcript fixes (Whisper mishearings, timings kept): \"10th\"\u2192\"tenth\", \"VEDA\"\u2192\"beta\", \"ReviewCount\"\u2192\"review count\" (split at its midpoint).",
+  "leadIn": 0.35,
+  "tail": 2.3,
+  "lines": [
+    {
+      "id": "L01",
+      "who": "owner",
+      "src": [
+        0,
+        0,
+        10
+      ],
+      "text": "My competitor has a hundred Google reviews... and I have five!",
+      "gapAfter": 0.5,
+      "why": "the conflict, then the shock lands"
+    },
+    {
+      "id": "L02",
+      "who": "owner",
+      "src": [
+        1,
+        0,
+        6
+      ],
+      "text": "That's it. My business is officially dead!",
+      "gapAfter": 1.5,
+      "why": "the studio turns into a tiny funeral; tears start"
+    },
+    {
+      "id": "L03",
+      "who": "owner",
+      "src": [
+        2,
+        0,
+        6
+      ],
+      "text": "Goodbye, little roofing company. You deserved better.",
+      "gapAfter": 3.5,
+      "why": "flowers placed on 'better'; ~0.9 s still + violin; the assistant enters quietly, notices, 0.5 s pause"
+    },
+    {
+      "id": "L04",
+      "who": "assistant",
+      "src": [
+        3,
+        0,
+        9
+      ],
+      "text": "Are you holding a funeral for your Google Business Profile?",
+      "gapAfter": 0.45
+    },
+    {
+      "id": "L05",
+      "who": "assistant",
+      "src": [
+        4,
+        0,
+        9
+      ],
+      "text": "More reviews can help. They don't automatically win every search.",
+      "gapAfter": 0.5,
+      "why": "he slowly looks up"
+    },
+    {
+      "id": "L06",
+      "who": "owner",
+      "src": [
+        5,
+        0,
+        5
+      ],
+      "text": "Wait... reviews aren't the whole ranking?",
+      "gapAfter": 0.4
+    },
+    {
+      "id": "L07",
+      "who": "assistant",
+      "src": [
+        6,
+        0,
+        6
+      ],
+      "text": "Google also considers relevance, distance, and prominence.",
+      "gapAfter": 0.8,
+      "why": "the memorial becomes a local-search map; three factor cards"
+    },
+    {
+      "id": "L08",
+      "who": "narrator",
+      "src": [
+        7,
+        0,
+        12
+      ],
+      "text": "Reviews and ratings matter, but review count alone doesn't decide Google Maps rankings.",
+      "gapAfter": 0.4
+    },
+    {
+      "id": "L09",
+      "who": "narrator",
+      "src": [
+        8,
+        0,
+        14
+      ],
+      "text": "Keep your business information accurate, choose relevant categories, and ask genuine customers for honest feedback.",
+      "gapAfter": 0.7,
+      "why": "back to the set"
+    },
+    {
+      "id": "L10",
+      "who": "owner",
+      "src": [
+        9,
+        0,
+        5
+      ],
+      "text": "So... I still have a chance?",
+      "gapAfter": 0.4
+    },
+    {
+      "id": "L11",
+      "who": "assistant",
+      "src": [
+        10,
+        0,
+        8
+      ],
+      "text": "Maybe focus on customers instead of planning a burial.",
+      "gapAfter": 0.5,
+      "why": "camera finds the flowers"
+    },
+    {
+      "id": "L12",
+      "who": "owner",
+      "src": [
+        11,
+        0,
+        6
+      ],
+      "text": "So... should I take the flowers back?",
+      "gapAfter": 0.4
+    },
+    {
+      "id": "L13",
+      "who": "assistant",
+      "src": [
+        12,
+        0,
+        6
+      ],
+      "text": "Keep the flowers. Your office looks depressing.",
+      "gapAfter": 1.1,
+      "why": "flowers become office decor; pause after the punchline"
+    },
+    {
+      "id": "L14",
+      "who": "assistant",
+      "src": [
+        13,
+        0,
+        6
+      ],
+      "text": "Oh, and here's some quick SEO news!",
+      "gapAfter": 0.35,
+      "why": "QUICK SEO NEWS notification"
+    },
+    {
+      "id": "L15",
+      "who": "assistant",
+      "src": [
+        14,
+        0,
+        9
+      ],
+      "text": "On November tenth, OpenAI launched Businesses in ChatGPT in beta!",
+      "gapAfter": 0.35,
+      "why": "guest cameo enters and waves"
+    },
+    {
+      "id": "L16",
+      "who": "assistant",
+      "src": [
+        15,
+        0,
+        14
+      ],
+      "text": "Eligible businesses can claim their profiles through Business Hub and, after verification, update their information!",
+      "gapAfter": 0.95,
+      "why": "cameo exits before the outro"
+    },
+    {
+      "id": "L17",
+      "who": "narrator",
+      "src": [
+        16,
+        0,
+        6
+      ],
+      "text": "GrowwithMH. Get found. Grow smarter.",
+      "gapAfter": 0
+    }
+  ]
+}
