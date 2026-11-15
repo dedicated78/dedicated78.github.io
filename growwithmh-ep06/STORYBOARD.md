@@ -43,6 +43,31 @@
   - **On screen:** the text follows the brief's wording and safeguards, and does not mention Business Agents.
 
 ## QA summary (final MP4)
-QA_TABLE
+| Check | Result |
+|---|---|
+| **File** | H.264 High, yuv420p, 1080x1920, 30 fps, 2333 frames. AAC LC 48 kHz stereo. Video 77.767 s, audio 77.766 s. A full decode reports 0 errors. |
+| **Loudness** | −14.4 LUFS integrated, LRA 5.5 LU, sample peak −1.9 dBFS. No clipping. |
+| **Planned quiet beats** | Below −45 dB from 16.11 to 16.94 s: the assistant's pause after noticing the funeral, before it speaks. 20.14–20.64 s is the gap before L05. 71.67–72.41 s is the lead into the end card. The stillness after the flowers (13.6–14.5 s) carries only the violin, by design. |
+| **Black frames / freezes** | None. No black frame of 0.2 s or more, and no frozen stretch of 2 s or more. |
+| **Story order (verified on frames)** | 1. Comparison (0)<br>2. Shock on "five" (3.8)<br>3. Business declared dead (5.1)<br>4. Funeral set (8.1)<br>5. Crying and two steps (9.8)<br>6. Flowers laid (13.40) and stillness<br>7. Maps Assistant arrives (14.35) and notices<br>8. "Funeral?" (16.96)<br>9. Reality check, then the map with RELEVANCE / DISTANCE / PROMINENCE (29.1 / 29.9 / 30.9)<br>10. Narrator lesson (31.9–44.0)<br>11. Hope (44.7)<br>12. Flower joke and office decor (55.9)<br>13. QUICK SEO NEWS (57.5)<br>14. Guest cameo in (60.0), waving ("OpenAI"→"beta"), out (70.2–71.2)<br>15. Outro (71.6) |
+| **Flower interaction (10 fps strip, 12.0–14.4 s)** | Bouquet always inside the fist, upright, stems through the fingers. Elbow under the hand during the reach. Continuous bow; legs stay planted. The resting bouquet is placed from the computed hand position, so position and angle are identical at 13.38 (in hand) and 13.42 (resting). The fist opens and withdraws; nothing floats or slides. |
+| **Tears** | Drawn in head space: they stay on the eyes and cheeks through every tilt and nod (checked across 8–30 s). They ease from "automatically" and are gone by "chance?". |
+| **Guest cameo (10 fps strips)** | Walks in with alternating legs and a small bounce. One arm raises and the forearm waves about three times, then lowers. Limbs stay attached. Walks off frame right before the outro. Silent. Tagged UNOFFICIAL CAMEO. The logo itself is unaltered. |
+| **Subtitles** | Word-synced, at most 4 words, speaker tags OWNER / MAPS ASSISTANT / GROWWITHMH, inside y 1404–1560, hidden on the end card. The opening was restaged so the owner's face never sits behind a caption (checked at 2 fps over 0–10 s). |
+| **Voices** | The same "Jack John" voice as in Episodes 02, 03 and 05 plays all three roles, separated by delivery and pitch. Every cut edge is −55 dB or lower; no word clipped, sped up or reordered. |
+| **Branding** | Series palette, studio, captions, kickers, and the established end card with the supplied logo (byte-identical to the series logo file). |
 
 **Limits of this QA:** I can't watch or listen in real time. Motion was checked through 10 fps frame strips, full-resolution zooms and a contact sheet; audio through loudness, silence, cut-edge and level measurements. Please give it one full playback with sound, especially the flower placement, the stillness and violin, and the guest cameo.
+
+## Limitations
+1. **OpenAI facts were not read first-hand.**
+   - openai.com blocks automated fetches from this environment with a Cloudflare challenge. I added openai.com to the allowlist; the site still refused.
+   - A browser-based workaround was blocked by the session's safety classifier, so I did not pursue it.
+   - The news text is corroborated by a web search: OpenAI's own page snippet, plus coverage dated 10–11 Nov 2026. Please open https://openai.com/index/introducing-businesses-chatgpt/ once and confirm the date, "beta", and "claim → verify → update".
+2. **The ChatGPT logo cameo is a trademark use.**
+   - It is the supplied logo, unaltered, with stick limbs added, tagged UNOFFICIAL CAMEO, and the news card adds no endorsement.
+   - OpenAI's brand guidelines restrict modifying or animating its marks. Adding limbs may fall under that even as parody.
+   - Your call before publishing. A plain logo card without limbs is a 10-minute swap.
+3. **One voice for three roles.** "Jack John" plays the owner, the assistant and the narrator; they are distinct by pitch.
+4. **No kneel.** The flowers are laid with a hip bow and reach instead of a kneel, as the brief allowed.
+5. **Sound is synthesized in-project.** The sobbing is limited to two soft sniffs so it doesn't fight the dialogue. The violin is a synthesized bowed-string voice, not a recorded violin.
