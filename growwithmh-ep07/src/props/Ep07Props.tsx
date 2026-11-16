@@ -37,11 +37,12 @@ export const ProfileCard7: React.FC<{shown: number; typing: number; hi: number; 
   if (clean > 0.5) text = NAME;
   const chars = text.length;
   // the field fights to contain it: the type shrinks a little, then it wraps and the field swells past the card
-  const size = clean > 0.5 ? 64 : Math.max(48, Math.min(64, 64 - (chars - 12) * 0.5));
-  const lineChars = Math.floor(850 / (size * 0.56));
-  const lines = clean > 0.5 ? 1 : Math.max(1, Math.ceil(chars / lineChars));
+  const size = clean > 0.5 ? 64 : Math.max(46, Math.min(64, 64 - (chars - 12) * 0.5));
   const wob = Math.sin(t * 9) * strain;
-  const fieldW = clean > 0.5 ? 680 : lerp(680, 900, clamp01((chars - 14) / 30));
+  // it may swell just past the card's right edge (comedy), never off the frame
+  const fieldW = clean > 0.5 ? 680 : lerp(680, 790, clamp01((chars - 14) / 30));
+  const lineChars = Math.floor((fieldW - 50) / (size * 0.58));
+  const lines = clean > 0.5 ? 1 : Math.max(1, Math.ceil(chars / lineChars));
   const fieldH = lines * size * 1.12 + 40;
   return (
     <div style={{position: 'relative', width: PROFILE7.w, height: PROFILE7.h}}>
@@ -247,22 +248,24 @@ export const ResultsStack: React.FC<{p: number; t: number}> = ({p, t}) => (
   </div>
 );
 
-/** Two ribbon bands strapped across the profile card + a knot ("a hostage situation"). Card space. */
+/** The name, strapped round the profile card like a parcel ("a hostage situation"): one strap across the
+ * header, one round the bottom edge, one down the left edge, knotted at the top-left corner. The straps
+ * stay off the name text so the business name remains readable. Card space. */
 export const WrapBands: React.FC<{p: number; w: number; h: number}> = ({p, w, h}) => {
   if (p <= 0.01) return null;
-  const band = (rot: number, i: number) => (
-    <div key={i} style={{position: 'absolute', left: -60, top: h / 2 - 34, width: w + 120, height: 68, transform: `rotate(${rot}deg) scaleX(${clamp01(p * 1.6 - i * 0.3)})`, transformOrigin: i ? '100% 50%' : '0 50%', borderRadius: 34, background: C.paper, boxShadow: '0 10px 20px -8px rgba(25,43,42,0.45), inset 0 0 0 3px rgba(23,97,90,0.25)', overflow: 'hidden', display: 'flex', alignItems: 'center'}}>
-      <div style={{whiteSpace: 'nowrap', fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: 28, color: C.teal, paddingLeft: 30}}>
-        {(NAME + ' — ' + PHRASES.join(' — ') + RIBBON_TEXT).toUpperCase()}
-      </div>
+  const label = (NAME + ' — ' + PHRASES.join(' — ') + RIBBON_TEXT).toUpperCase();
+  const strap = (key: string, style: React.CSSProperties, grow: number, origin: string) => (
+    <div key={key} style={{position: 'absolute', height: 52, borderRadius: 26, background: C.paper, boxShadow: '0 10px 20px -8px rgba(25,43,42,0.45), inset 0 0 0 3px rgba(23,97,90,0.25)', overflow: 'hidden', display: 'flex', alignItems: 'center', transformOrigin: origin, ...style, transform: `${style.transform ?? ''} scaleX(${clamp01(grow)})`}}>
+      <div style={{whiteSpace: 'nowrap', fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: 22, color: C.teal, paddingLeft: 26}}>{label}</div>
     </div>
   );
   return (
     <div style={{position: 'absolute', inset: 0}}>
-      {band(-14, 0)}
-      {band(16, 1)}
-      <div style={{position: 'absolute', left: w / 2 - 40, top: h / 2 - 40, width: 80, height: 80, borderRadius: '50%', background: C.teal, boxShadow: '0 10px 20px -8px rgba(25,43,42,0.5)', transform: `scale(${clamp01(p * 2 - 0.8)})`, display: 'grid', placeItems: 'center'}}>
-        <div style={{width: 34, height: 34, borderRadius: '50%', background: C.tealBright}} />
+      {strap('top', {left: -34, top: 12, width: w + 68, transform: 'rotate(-2.5deg)'}, p * 1.6, '0 50%')}
+      {strap('bottom', {left: -34, top: h - 30, width: w + 68, transform: 'rotate(2deg)'}, p * 1.6 - 0.3, '100% 50%')}
+      {strap('left', {left: 8 - (h + 40) / 2, top: h / 2 - 26, width: h + 40, transform: 'rotate(90deg)'}, p * 1.6 - 0.5, '50% 50%')}
+      <div style={{position: 'absolute', left: -22, top: -6, width: 74, height: 74, borderRadius: '50%', background: C.teal, boxShadow: '0 10px 20px -8px rgba(25,43,42,0.5)', transform: `scale(${clamp01(p * 2 - 0.8)})`, display: 'grid', placeItems: 'center'}}>
+        <div style={{width: 30, height: 30, borderRadius: '50%', background: C.tealBright}} />
       </div>
     </div>
   );

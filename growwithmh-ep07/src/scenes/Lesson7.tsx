@@ -21,7 +21,7 @@ export const Lesson7: React.FC<{t: number}> = ({t}) => {
   const inP = pr(t, Q.lessonIn - 0.05, 0.35);
   const outP = pr(t, Q.lessonOut - 0.2, 0.35, EZ.in);
   // 1 · incorrect vs correct
-  const exIn = pr(t, Q.L09 - 0.2, 0.5, EZ.back);
+  const exIn = pr(t, Q.lessonIn - 0.05, 0.5, EZ.back); // arrives with the transition: no empty frame
   const goodIn = pr(t, Q.L09 + 1.2, 0.5, EZ.back);
   const strike = pr(t, Q.shortcut - 0.1, 0.5, EZ.inOut);
   const exOut = pr(t, Q.L10 - 0.35, 0.4, EZ.in);

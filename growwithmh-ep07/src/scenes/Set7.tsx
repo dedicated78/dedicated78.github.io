@@ -23,8 +23,13 @@ const MAP_A = {x: 880, y: 760, w: 240, h: 170};
 const MAP_B = {x: 640, y: 960, w: 220, h: 150};
 const PIN = {x: 930, y: 1335, w: 210};
 const TILE = {x: 930, y: 1352, size: 270};
-const PILE = {x: 660, y: 1300};
+const PILE = {x: 600, y: 1300};
 
+/** Explicit depth layer inside the 3D world (cards are real 3D planes, so flat elements need a z to sort
+ * predictably): map B 0 · ribbon 30 · owner 45 · ribbon-front 55 · labels/crown/bulb 60 · map A 70 · results 80. */
+const Z: React.FC<{z: number; children: React.ReactNode}> = ({z, children}) => (
+  <div style={{position: 'absolute', left: 0, top: 0, width: 1080, height: 1920, transform: `translateZ(${z}px)`, transformStyle: 'preserve-3d', pointerEvents: 'none'}}>{children}</div>
+);
 const bump = (t: number, a: number, d: number) => (t < a || t > a + d ? 0 : Math.sin((Math.PI * (t - a)) / d));
 const blink = (t: number, period: number, phase: number) => {
   const u = (t + phase) % period;
@@ -34,10 +39,10 @@ const talking = (who: 'owner' | 'assistant', t: number, k = 1.6) => (speakerAt(t
 
 // ---------------------------------------------------------------- the ribbon path (world space)
 const RIB_PTS: Pt[] = [
-  {x: 1030, y: 560},
-  {x: 1070, y: 600},
-  {x: 1072, y: 660},
-  {x: 1036, y: 720}, // out of the swollen field, down the right side, behind map card A
+  {x: 972, y: 532}, // the right edge of the swollen name field
+  {x: 1022, y: 556},
+  {x: 1046, y: 630},
+  {x: 1028, y: 712}, // down the right margin, behind map card A
   {x: 958, y: 806},
   {x: 836, y: 852},
   {x: 716, y: 884}, // over map card B
@@ -46,14 +51,12 @@ const RIB_PTS: Pt[] = [
   {x: 466, y: 1040},
   {x: 320, y: 1052}, // behind him (chest height)
   {x: 170, y: 1062},
-  {x: 70, y: 1112},
+  {x: 74, y: 1112},
   {x: 92, y: 1186}, // round his left side
   {x: 262, y: 1214},
   {x: 432, y: 1196}, // across his front, at the hips
-  {x: 604, y: 1216},
-  {x: 820, y: 1256},
-  {x: 1300, y: 1280},
-];
+  {x: 580, y: 1226}, // free end, well clear of the Maps Assistant
+]
 const RIB = smoothPath(RIB_PTS);
 const lenTo = (k: number) => smoothPath(RIB_PTS.slice(0, k + 1)).len;
 const L_CARDS = lenTo(8); // past both map cards
@@ -181,16 +184,16 @@ const camAt = (t: number): Cam => {
     y = lerp(y, ny, p);
     s = lerp(s, ns, p);
   };
-  mv(k(0.15, 0.6, EZ.out), 520, 680, 1.15); // quick push toward the name field
-  mv(k(Q.numberOne - 0.3, 0.6), 540, 700, 1.06);
+  mv(k(0.15, 0.6, EZ.out), 540, 690, 1.08); // quick push toward the name field (card + field stay inside the frame)
+  mv(k(Q.numberOne - 0.3, 0.6), 560, 710, 1.02);
   mv(k(Q.ha - 0.1, 0.6), 540, 760, 0.98); // victory + crown, the ribbon begins
-  mv(k(Q.L03e - 0.2, 0.9), 690, 830, 0.97); // follow the ribbon down past the map cards (his face stays in frame)
+  mv(k(Q.L03e - 0.2, 0.9), 650, 830, 0.95); // follow the ribbon down past the map cards (his face stays in frame)
   mv(k(Q.L04 + 0.2, 0.9), 600, 960, 1.04);
-  mv(k(Q.taking - 0.5, 0.8), 400, 1020, 1.02); // round him
+  mv(k(Q.taking - 0.5, 0.8), 480, 1000, 0.95); // round him (the card stays inside the frame)
   mv(k(Q.L04e + 0.05, 0.9), 600, 930, 0.93); // wide: the assistant arrives
   mv(k(Q.wrap - 0.2, 0.7), 590, 720, 1.02); // the trapped panel
   mv(k(Q.caution - 0.2, 0.7), 600, 760, 0.98);
-  mv(k(Q.L08 - 0.2, 0.5), 440, 770, 1.05); // his panic (the card stays clear of the kicker)
+  mv(k(Q.L08 - 0.2, 0.5), 540, 810, 0.96); // his panic (card, straps and kicker all inside the frame)
   if (t > Q.lessonOut - 0.4) {
     x = 600;
     y = 860;
@@ -228,8 +231,8 @@ export const Set7: React.FC<{t: number; fade?: number}> = ({t, fade = 1}) => {
   const crawl = Math.max(0, t - Q.ha) * 70;
   const ribbonOut = pr(t, Q.results - 0.05, 0.3); // turns into result cards, then the wrap
   const ribbonO = 1 - ribbonOut;
-  const resultsP = pr(t, Q.results, 0.6) * (1 - pr(t, Q.wrap - 0.1, 0.3, EZ.in));
-  const wrapP = pr(t, Q.wrap, 0.7, EZ.out) * (late ? 0 : 1);
+  const resultsP = pr(t, Q.results, 0.6) * (1 - pr(t, Q.wrap - 0.4, 0.3, EZ.in)); // gone before the straps start
+  const wrapP = pr(t, Q.wrap - 0.05, 0.7, EZ.out) * (late ? 0 : 1);
   const trapped = Math.sin(t * 13) * 1.6 * wrapP * (t < Q.caution ? 1 : 0.4);
   const cautionP = pr(t, Q.caution, 0.45, EZ.back) * (1 - pr(t, Q.L08 - 0.15, 0.3, EZ.in));
   const giant = bump(t, Q.L04 + 0.3, Q.L04e - Q.L04 + 0.6);
@@ -242,7 +245,7 @@ export const Set7: React.FC<{t: number; fade?: number}> = ({t, fade = 1}) => {
   const crownGone = pr(t, Q.taking - 0.3, 0.5, EZ.in);
 
   // map cards
-  const mapsP = pr(t, Q.ha + 0.1, 0.5, EZ.back) * (1 - pr(t, Q.lessonIn - 0.4, 0.3, EZ.in)) * (late ? 0 : 1);
+  const mapsP = pr(t, Q.ha + 0.1, 0.5, EZ.back) * (1 - pr(t, Q.lessonIn - 0.4, 0.3, EZ.in)) * (late ? 0 : 1) * (1 - 0.85 * pr(t, Q.results - 0.1, 0.3) * (1 - pr(t, Q.wrap - 0.1, 0.4)));
 
   // Maps Assistant (Episode 01 entrance)
   const tileIn = pr(t, Q.enter - 0.2, 0.45, EZ.out);
@@ -284,24 +287,36 @@ export const Set7: React.FC<{t: number; fade?: number}> = ({t, fade = 1}) => {
         {/* the profile card */}
         {profOut < 1 && (
           <Obj cx={PROF.x} cy={PROF.y - profOut * 120} w={PROFILE7.w} h={PROFILE7.h} pose={{s: lerp(0.86, 1, pr(t, 0, 0.4)) * lerp(1, 0.7, profOut), rx: 3, rz: trapped, ry: Math.sin(t * 0.8) * 2}}>
-            <div style={{opacity: (1 - profOut) * (1 - resultsP)}}>
+            <div style={{opacity: (1 - profOut) * (1 - resultsP) * (1 - 0.72 * cautionP)}}>
               <ProfileCard7 shown={shown} typing={typing} hi={hi} strain={strain} t={t} clean={clean} />
               <WrapBands p={wrapP} w={PROFILE7.w} h={PROFILE7.h} />
             </div>
           </Obj>
         )}
-        {counterP > 0.01 && (
-          <div style={{position: 'absolute', left: PROF.x + 250, top: PROF.y - PROFILE7.h / 2 - 66}}>
-            <WordCounter n={extraWords} p={counterP} />
-          </div>
-        )}
+        <Z z={60}>
+          {counterP > 0.01 && (
+            <div style={{position: 'absolute', left: PROF.x + PROFILE7.w / 2 - 300, width: 300, top: PROF.y - PROFILE7.h / 2 - 62, display: 'flex', justifyContent: 'flex-end'}}>
+              <WordCounter n={extraWords} p={counterP} />
+            </div>
+          )}
+          {t > Q.L03e + 0.2 && t < Q.L04 + 1.2 && (
+            <div style={{position: 'absolute', left: PROF.x - PROFILE7.w / 2, top: PROF.y - PROFILE7.h / 2 - 66, opacity: pr(t, Q.L03e + 0.25, 0.3, EZ.back) * (1 - pr(t, Q.L04 + 0.8, 0.3))}}>
+              <div style={{padding: '10px 22px', borderRadius: 18, background: C.paper, boxShadow: '0 16px 32px -14px rgba(25,43,42,0.5), inset 0 0 0 3px rgba(211,155,79,0.6)', display: 'flex', alignItems: 'center', gap: 12, transform: `rotate(${Math.sin(t * 7) * 1.2}deg)`, transformOrigin: '0 50%'}}>
+                <div style={{width: 34, height: 34, borderRadius: '50%', background: C.amber, display: 'grid', placeItems: 'center', fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: 24, color: C.cream}}>!</div>
+                <div style={{fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: 28, color: C.charcoal, whiteSpace: 'nowrap'}}>NAME TOO LONG TO BE REASONABLE</div>
+              </div>
+            </div>
+          )}
+        </Z>
 
         {/* the ribbon: behind map card A and behind him */}
-        <Ribbon id="ribBack" d={RIB.d} reveal={reveal} crawl={crawl} text={RIBBON_TEXT} opacity={ribbonO} />
+        <Z z={30}>
+          <Ribbon id="ribBack" d={RIB.d} reveal={reveal} crawl={crawl} text={RIBBON_TEXT} opacity={ribbonO} />
+        </Z>
 
         {/* map card A sits in front of the ribbon */}
         {mapsP > 0.01 && (
-          <Obj cx={MAP_A.x} cy={MAP_A.y} w={MAP_A.w} h={MAP_A.h} pose={{s: lerp(0.5, 1, mapsP), rz: 7, rx: 8, ry: Math.sin(t * 0.8 + 1) * 4}}>
+          <Obj cx={MAP_A.x} cy={MAP_A.y} w={MAP_A.w} h={MAP_A.h} pose={{s: lerp(0.5, 1, mapsP), z: 70, rz: 7, rx: 8, ry: Math.sin(t * 0.8 + 1) * 4}}>
             <div style={{opacity: Math.min(1, mapsP * 2)}}>
               <MapCard w={MAP_A.w} h={MAP_A.h} />
             </div>
@@ -326,21 +341,25 @@ export const Set7: React.FC<{t: number; fade?: number}> = ({t, fade = 1}) => {
         {/* the pile of discarded keyword cards */}
         {pileP > 0.01 &&
           pileWords.map((w, i) => {
-            const col = i % 5;
-            const row = Math.floor(i / 5);
+            const col = i % 4;
+            const row = Math.floor(i / 4);
             const q = Math.max(0, Math.min(1, pileP * 3 - i * 0.12));
             const fly = pr(t, Q.site + 0.05 + i * 0.03, 0.5, EZ.in);
             return (
-              <div key={w + i} style={{position: 'absolute', left: PILE.x - 230 + col * 92 + (row % 2) * 30, top: PILE.y - 70 - row * 40 - (1 - q) * 160 - fly * 420, transform: `rotate(${((i * 37) % 30) - 15}deg) scale(${0.62 * (1 - fly * 0.4)})`, transformOrigin: '50% 50%', opacity: q * (1 - fly)}}>
+              <div key={w + i} style={{position: 'absolute', left: PILE.x - 200 + col * 88 + (row % 2) * 24, top: PILE.y - 70 - row * 36 - (1 - q) * 160 - fly * 420, transform: `rotate(${((i * 37) % 30) - 15}deg) scale(${0.62 * (1 - fly * 0.4)})`, transformOrigin: '50% 50%', opacity: q * (1 - fly)}}>
                 <KeyChip label={w} tone={i < 5 ? 1 : 0} />
               </div>
             );
           })}
 
-        <OwnerAt x={OWN.x + fs.dx} y={OWN.y + fs.dy} w={OWN.w} pose={o} />
+        <Z z={45}>
+          <OwnerAt x={OWN.x + fs.dx} y={OWN.y + fs.dy} w={OWN.w} pose={o} />
+        </Z>
 
         {/* the ribbon again, only where it crosses in front of his hips */}
-        <Ribbon id="ribFront" d={RIB.d} reveal={reveal} crawl={crawl} text={RIBBON_TEXT} opacity={ribbonO} clip="url(#ribFrontClip)" />
+        <Z z={55}>
+          <Ribbon id="ribFront" d={RIB.d} reveal={reveal} crawl={crawl} text={RIBBON_TEXT} opacity={ribbonO} clip="url(#ribFrontClip)" />
+        </Z>
         <svg width={0} height={0} style={{position: 'absolute'}}>
           <defs>
             <clipPath id="ribFrontClip" clipPathUnits="userSpaceOnUse">
@@ -349,24 +368,28 @@ export const Set7: React.FC<{t: number; fade?: number}> = ({t, fade = 1}) => {
           </defs>
         </svg>
 
-        {/* crown (slips sideways as the name takes over) + idea bulb */}
-        {crown > 0.01 && crownGone < 1 && (
-          <div style={{position: 'absolute', left: head.x - 52 + slip * 46, top: head.y - 79 - (1 - crown) * 60 + slip * 26 + crownGone * 120, transform: `scale(${crown}) rotate(${o.head * 0.8 + slip * 28}deg)`, transformOrigin: '50% 100%', opacity: 1 - crownGone}}>
-            <Crown w={104} />
-          </div>
-        )}
-        {bulb > 0.01 && (
-          <div style={{position: 'absolute', left: head.x + 60, top: head.y - 150}}>
-            <IdeaBulb p={bulb} t={t} />
-          </div>
-        )}
+        {/* crown (slips sideways as the name takes over) + idea bulb (beside his head, clear of the card) */}
+        <Z z={60}>
+          {crown > 0.01 && crownGone < 1 && (
+            <div style={{position: 'absolute', left: head.x - 52 + slip * 46, top: head.y - 79 - (1 - crown) * 60 + slip * 26 + crownGone * 120, transform: `scale(${crown}) rotate(${o.head * 0.8 + slip * 28}deg)`, transformOrigin: '50% 100%', opacity: 1 - crownGone}}>
+              <Crown w={104} />
+            </div>
+          )}
+          {bulb > 0.01 && (
+            <div style={{position: 'absolute', left: head.x + 96, top: head.y - 64}}>
+              <IdeaBulb p={bulb} t={t} />
+            </div>
+          )}
+        </Z>
 
-        {/* "an entire search results page" */}
-        {resultsP > 0.01 && (
-          <div style={{position: 'absolute', left: 600 - 320, top: 200}}>
-            <ResultsStack p={resultsP} t={t} />
-          </div>
-        )}
+        {/* "an entire search results page" — above his head, maps stepped back */}
+        <Z z={80}>
+          {resultsP > 0.01 && (
+            <div style={{position: 'absolute', left: 620 - 256, top: 214, transform: 'scale(0.8)', transformOrigin: '0 0'}}>
+              <ResultsStack p={resultsP} t={t} />
+            </div>
+          )}
+        </Z>
 
         {/* caution card */}
         {cautionP > 0.01 && (
@@ -394,14 +417,6 @@ export const Set7: React.FC<{t: number; fade?: number}> = ({t, fade = 1}) => {
       <Kicker t={t} at={Q.p247} out={Q.cheap - 0.15} lines={[<Hl key="a">24/7!</Hl>]} size={110} top={200} />
       <Kicker t={t} at={Q.cheap} out={Q.numberOne - 0.12} lines={[<Hl key="a">CHEAP!</Hl>]} size={110} top={200} />
       <Kicker t={t} at={Q.numberOne} out={Q.L02e + 0.35} lines={[<span key="a" style={{color: '#B5792C'}}>NUMBER ONE!</span>]} size={104} top={200} />
-      {t > Q.L03e + 0.2 && t < Q.L04 + 1.2 && (
-        <div style={{position: 'absolute', left: 0, right: 0, top: 210, display: 'flex', justifyContent: 'center', opacity: pr(t, Q.L03e + 0.25, 0.3, EZ.back) * (1 - pr(t, Q.L04 + 0.8, 0.3))}}>
-          <div style={{padding: '12px 26px', borderRadius: 20, background: C.paper, boxShadow: '0 16px 32px -14px rgba(25,43,42,0.5), inset 0 0 0 3px rgba(211,155,79,0.6)', display: 'flex', alignItems: 'center', gap: 14, transform: `rotate(${Math.sin(t * 7) * 1.2}deg)`}}>
-            <div style={{width: 38, height: 38, borderRadius: '50%', background: C.amber, display: 'grid', placeItems: 'center', fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: 26, color: C.cream}}>!</div>
-            <div style={{fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: 34, color: C.charcoal}}>NAME TOO LONG TO BE REASONABLE</div>
-          </div>
-        </div>
-      )}
       <Kicker t={t} at={Q.notA - 0.1} out={Q.results - 0.2} lines={[<span key="a">THAT&apos;S NOT A <Hl>BUSINESS NAME.</Hl></span>]} size={60} top={200} />
       <Kicker t={t} at={Q.real7 - 0.1} out={Q.caution - 0.1} lines={[<span key="a">USE YOUR <Hl>REAL</Hl></span>, <span key="b">BUSINESS NAME</span>]} size={82} top={200} />
       <Kicker t={t} at={Q.L08} out={Q.L08e + 0.35} lines={[<span key="a" style={{color: '#B5792C'}}>SUSPENSION?!</span>]} size={110} top={200} />
