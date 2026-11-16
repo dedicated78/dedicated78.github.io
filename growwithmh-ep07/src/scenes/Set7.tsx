@@ -184,7 +184,7 @@ const camAt = (t: number): Cam => {
   mv(k(0.15, 0.6, EZ.out), 520, 680, 1.15); // quick push toward the name field
   mv(k(Q.numberOne - 0.3, 0.6), 540, 700, 1.06);
   mv(k(Q.ha - 0.1, 0.6), 540, 760, 0.98); // victory + crown, the ribbon begins
-  mv(k(Q.L03e - 0.2, 0.9), 780, 820, 1.02); // follow the ribbon down past the map cards
+  mv(k(Q.L03e - 0.2, 0.9), 690, 830, 0.97); // follow the ribbon down past the map cards (his face stays in frame)
   mv(k(Q.L04 + 0.2, 0.9), 600, 960, 1.04);
   mv(k(Q.taking - 0.5, 0.8), 400, 1020, 1.02); // round him
   mv(k(Q.L04e + 0.05, 0.9), 600, 930, 0.93); // wide: the assistant arrives
