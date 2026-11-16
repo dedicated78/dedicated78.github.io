@@ -1,0 +1,178 @@
+{
+  "note": "Episode 07 lines in the brief's mandatory order. src = [transcript entry, first word, last word]. Caption label fixes (timings kept): \"24 -7\" -> \"24/7\", \"1\" -> \"one\", \"47\" -> \"forty-seven\".",
+  "leadIn": 0.3,
+  "tail": 2.3,
+  "lines": [
+    {
+      "id": "L01",
+      "who": "owner",
+      "src": [
+        0,
+        0,
+        9
+      ],
+      "text": "I figured it out! My business name needs more keywords!",
+      "gapAfter": 0.35
+    },
+    {
+      "id": "L02",
+      "who": "owner",
+      "src": [
+        1,
+        0,
+        12
+      ],
+      "text": "Apex Roofing! Best Brooklyn Roofer! Emergency Roof Repairs! 24/7! Cheap! Number one!",
+      "gapAfter": 0.35,
+      "why": "each phrase is typed into the name field as he says it"
+    },
+    {
+      "id": "L03",
+      "who": "owner",
+      "src": [
+        2,
+        0,
+        4
+      ],
+      "text": "Ha! Try outranking that!",
+      "gapAfter": 1.0,
+      "why": "victory + crown; the name keeps growing into a ribbon"
+    },
+    {
+      "id": "L04",
+      "who": "owner",
+      "src": [
+        3,
+        0,
+        9
+      ],
+      "text": "Wait... why is my business name taking over the screen?",
+      "gapAfter": 1.6,
+      "why": "the ribbon wraps round him; the Maps Assistant arrives, looks at the name, then him; ~0.5 s pause"
+    },
+    {
+      "id": "L05",
+      "who": "assistant",
+      "src": [
+        4,
+        0,
+        11
+      ],
+      "text": "Sir... that's not a business name. That's an entire search results page.",
+      "gapAfter": 0.45
+    },
+    {
+      "id": "L06",
+      "who": "assistant",
+      "src": [
+        5,
+        0,
+        8
+      ],
+      "text": "Your listing needs a name, not a hostage situation.",
+      "gapAfter": 0.8,
+      "why": "short pause after the joke"
+    },
+    {
+      "id": "L07",
+      "who": "assistant",
+      "src": [
+        6,
+        0,
+        14
+      ],
+      "text": "Google's rules require your real business name. Unnecessary keywords can put your profile at risk.",
+      "gapAfter": 0.35
+    },
+    {
+      "id": "L08",
+      "who": "owner",
+      "src": [
+        7,
+        0,
+        3
+      ],
+      "text": "Suspension?! For adding keywords?!",
+      "gapAfter": 0.7
+    },
+    {
+      "id": "L09",
+      "who": "narrator",
+      "src": [
+        8,
+        0,
+        12
+      ],
+      "text": "Adding keywords to your Google Business Profile name isn't a compliant ranking shortcut.",
+      "gapAfter": 0.4
+    },
+    {
+      "id": "L10",
+      "who": "assistant",
+      "src": [
+        9,
+        0,
+        9
+      ],
+      "text": "Put your services, hours, and locations in the proper fields.",
+      "gapAfter": 0.4
+    },
+    {
+      "id": "L11",
+      "who": "narrator",
+      "src": [
+        10,
+        0,
+        16
+      ],
+      "text": "Use the name your business is genuinely known by. Keep your categories, services, and business information accurate.",
+      "gapAfter": 0.7
+    },
+    {
+      "id": "L12",
+      "who": "owner",
+      "src": [
+        11,
+        0,
+        8
+      ],
+      "text": "So... my business name should just be Apex Roofing?",
+      "gapAfter": 0.6,
+      "why": "a small approving reaction from the assistant"
+    },
+    {
+      "id": "L13",
+      "who": "owner",
+      "src": [
+        12,
+        0,
+        11
+      ],
+      "text": "Then what am I supposed to do with the other forty-seven words?",
+      "gapAfter": 0.4
+    },
+    {
+      "id": "L14",
+      "who": "assistant",
+      "src": [
+        13,
+        0,
+        10
+      ],
+      "text": "Try putting those extra words on your website. In actual sentences.",
+      "gapAfter": 2.0,
+      "why": "pause after the punchline; then 'YOUR BUSINESS NAME ISN'T A KEYWORD LIST.' before the lockup"
+    },
+    {
+      "id": "L15",
+      "who": "narrator",
+      "src": [
+        14,
+        0,
+        4
+      ],
+      "text": "GrowwithMH. Get found. Grow smarter.",
+      "gapAfter": 0
+    }
+  ]
+}
