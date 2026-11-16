@@ -132,6 +132,27 @@ All timing comes from the supplied ElevenLabs VO (see `VO-SCRIPT.md`). Word onse
 **What the episode avoids saying:** that suspension is guaranteed or immediate, that descriptive real names are banned, that filling fields guarantees ranking, or that the fictional warnings are real Google messages.
 
 ## QA summary (final MP4)
-QA_TABLE
+| Check | Result |
+|---|---|
+| File | H.264 High yuv420p, 1080x1920, 30 fps, 2230 frames. AAC LC 48 kHz stereo. Video and audio both run 74.333 s. A full decode reports 0 errors. |
+| Loudness | −14.5 LUFS integrated, LRA 4.5 LU, sample peak −1.8 dBFS. No clipping. |
+| Planned quiet beats | 18.13–19.10: the assistant looks at the name, then at him, then pauses. 66.80–67.34: the beat after "In actual sentences." 67.84–68.63: the statement card before the lockup. |
+| Black frames / freezes | None. No black frame of 0.2 s or more, and no frozen stretch of 2 s or more. |
+| Story order (frames) | Idea (0.4) → phrases typed on their words (5.35 / 6.86 / 8.19 / 9.62 / 10.27) → crown and ribbon (11.7) → "too long" warning (13.6) → record stop and the ribbon round him (14.6–17.3) → assistant (17.5) → result cards (22.3) → hostage wrap (24.2) → caution (31.7) → panic (35.5) → lesson (37.9–54.7) → clean name (55.2) → the pile (59.5) → website copy (64.1) and final full stop (66.6) → outro (67.3). |
+| Name animation (10 fps strips) | Continuous growth: typed phrases, the field wrapping to three readable lines and swelling past the card, then a ribbon that flows along a smooth path behind map card A, over map card B, behind his chest and in front of his hips. The text stays readable throughout and never covers the subtitles (ribbon lowest point ≈ y 1270 world). |
+| Gestures | Approved patterns only: eureka finger, palm-up presenting and questioning, double fist pump, open hands for panic with a small hip-hinged step back, and a relaxed embarrassed nod. No disconnected parts and no handheld props. The ribbon never grabs or touches his neck. |
+| Framing | His face stays in frame and clear of captions through the ribbon follow (re-framed and re-rendered for 10–20 s). Kickers sit above the cards. |
+| Subtitles | Word-synced, at most 4 words, speaker tags OWNER / MAPS ASSISTANT / GROWWITHMH, inside y 1404–1560, hidden on the end card. |
+| Voices | "Jack John" (same as Ep02, 03, 05, 06) for all three roles, separated by pitch and delivery. All 15 lines in order; every cut edge at −47 dB or lower. |
+| Branding | Series palette, captions, kickers, the established end card, and the supplied logo (byte-identical to the series file). |
 
 **Limits of this QA:** I can't watch or listen in real time. Motion was checked through 10 fps frame strips, full-resolution zooms and a contact sheet, and audio through loudness, silence, cut-edge and level measurements. Please give it one full playback with sound.
+
+## Limitations
+1. **Runtime is 74.3 s against a 55–70 s target.**
+   - The supplied recording is 66.5 s, and about 64 s of it is dialogue.
+   - Reaching 70 s would have meant cutting the comedic pauses the brief asks for, or rushing speech.
+   - The longest single pause is a natural 1.3 s gap inside the recorded L07, between "...real business name." and "Unnecessary keywords...".
+2. **One voice for three roles.** "Jack John" voices the owner, the Maps Assistant and the narrator; they are distinct by pitch.
+3. **"47 words" in the ribbon.** The ribbon is designed to hold exactly 47 extra words: 9 spoken plus 38 in the ribbon. Because the ribbon text flows and loops, not all 38 are on screen at once. The counter carries the +47.
+4. **Synthesized music and SFX.** They are synthesized in-project, with no licensed audio and no paid services.
